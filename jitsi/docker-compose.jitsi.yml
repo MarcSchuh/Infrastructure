@@ -1,0 +1,112 @@
+services:
+  # ------------------------------------------------------
+  # Prosody (XMPP server)
+  # ------------------------------------------------------
+  prosody:
+    image: jitsi/prosody:stable
+    container_name: jitsi_prosody
+    restart: unless-stopped
+    ports:
+      - "5222:5222"
+      - "5347:5347"
+      - "5280:5280"
+    volumes:
+      - /home/marc/general_infrastructure_data/jitsi/config/prosody:/config:Z
+    environment:
+      - XMPP_DOMAIN=${XMPP_DOMAIN}
+      - XMPP_AUTH_DOMAIN=${XMPP_AUTH_DOMAIN}
+      - XMPP_MUC_DOMAIN=muc.${XMPP_DOMAIN}
+      - XMPP_INTERNAL_MUC_DOMAIN=internal-muc.${XMPP_DOMAIN}
+      - JICOFO_COMPONENT_SECRET=${JICOFO_COMPONENT_SECRET}
+      - JVB_AUTH_USER=${JVB_AUTH_USER}
+      - JVB_AUTH_PASSWORD=${JVB_AUTH_PASSWORD}
+    env_file:
+      - .env
+      - credentials.env
+    networks:
+      - jitsi_network
+
+  # ------------------------------------------------------
+  # Jicofo (Focus component)
+  # ------------------------------------------------------
+  jicofo:
+    image: jitsi/jicofo:stable
+    container_name: jitsi_jicofo
+    restart: unless-stopped
+    depends_on:
+      - prosody
+    volumes:
+      - /home/marc/general_infrastructure_data/jitsi/config/jicofo:/config:Z
+    environment:
+      - XMPP_DOMAIN=${XMPP_DOMAIN}
+      - XMPP_AUTH_DOMAIN=${XMPP_AUTH_DOMAIN}
+      - XMPP_MUC_DOMAIN=muc.${XMPP_DOMAIN}
+      - XMPP_INTERNAL_MUC_DOMAIN=internal-muc.${XMPP_DOMAIN}
+      - JVB_AUTH_USER=${JVB_AUTH_USER}
+      - JVB_AUTH_PASSWORD=${JVB_AUTH_PASSWORD}
+      - JICOFO_COMPONENT_SECRET=${JICOFO_COMPONENT_SECRET}
+      - JICOFO_AUTH_USER=${JICOFO_AUTH_USER}
+      - JICOFO_AUTH_PASSWORD=${JICOFO_AUTH_PASSWORD}
+    env_file:
+      - .env
+      - credentials.env
+    networks:
+      - jitsi_network
+
+  # ------------------------------------------------------
+  # JVB (Video Bridge)
+  # ------------------------------------------------------
+  jvb:
+    image: jitsi/jvb:stable
+    container_name: jitsi_jvb
+    restart: unless-stopped
+    depends_on:
+      - prosody
+    ports:
+      - "10000:10000"
+    volumes:
+      - /home/marc/general_infrastructure_data/jitsi/config/jvb:/config:Z
+    environment:
+      - XMPP_DOMAIN=${XMPP_DOMAIN}
+      - XMPP_AUTH_DOMAIN=${XMPP_AUTH_DOMAIN}
+      - XMPP_MUC_DOMAIN=muc.${XMPP_DOMAIN}
+      - XMPP_INTERNAL_MUC_DOMAIN=internal-muc.${XMPP_DOMAIN}
+      - JVB_AUTH_USER=${JVB_AUTH_USER}
+      - JVB_AUTH_PASSWORD=${JVB_AUTH_PASSWORD}
+      - JVB_AUTH_USER=${JVB_AUTH_USER}
+      - JVB_AUTH_PASSWORD=${JVB_AUTH_PASSWORD}
+      - XMPP_SERVER=${XMPP_SERVER}
+    env_file:
+      - .env
+      - credentials.env
+    networks:
+      - jitsi_network
+
+  # ------------------------------------------------------
+  # Web (Jitsi Meet web interface)
+  # ------------------------------------------------------
+  web:
+    image: jitsi/web:stable
+    container_name: jitsi_web
+    restart: unless-stopped
+    depends_on:
+      - prosody
+      - jicofo
+      - jvb
+    volumes:
+      - /home/marc/general_infrastructure_data/jitsi/config/web:/config:Z
+      - /home/marc/general_infrastructure_data/jitsi/config/transcripts:/usr/share/jitsi-meet/transcripts:Z
+    environment:
+      - ENABLE_AUTH=${ENABLE_AUTH}
+      - AUTH_TYPE=${AUTH_TYPE}
+      - ENABLE_LETSENCRYPT=0
+    env_file:
+      - .env
+      - credentials.env
+    networks:
+      - jitsi_network
+
+networks:
+  jitsi_network:
+    external: true
+
