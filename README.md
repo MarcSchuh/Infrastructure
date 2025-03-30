@@ -3,31 +3,31 @@
 
 Steps:
 - Ensure all files are present
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
+22/tcp
+80/tcp
+443/tcp
+10000/udp 
+8000/tcp
+8443/tcp
+3478/udp
+5349/udp
 
+
+Create docker network
 docker network create jitsi_network
+
+zuerst in der nginx.conf den Teil disablen, der die Zertifikate braucht. Die kommen im zweiten Schritt
 
 ~/docker-compose-linux-x86_64 -f docker-compose.jitsi.yml up -d
 
-erst den Teil in der nginx.conf disablen, der die Zertifikate braucht
+Zertifikate anlegen
 
-~/docker-compose-linux-x86_64 -f docker-compose.proxy.yml run --rm certbot certonly --webroot -w /var/www/certbot-challenges -d jitsi.test.marcschuh.de --email your-letsencrypttest@marc-schuh.de --agree-tos --no-eff-email
+~/docker-compose-linux-x86_64 -f docker-compose.proxy.yml run --rm certbot certonly --webroot -w /var/www/certbot-challenges -d jitsi.test.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
 
 
 register user:
-docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register youruser auth.jitsi.test.marcschuh.de yourpassword
+docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register youruser auth.jitsi.test.mydomain.de yourpassword
 
-sudo ufw allow 8000/tcp
-sudo ufw allow 8443/tcp
+docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register focus auth.jitsi.test.mydomain.de YOUR_SECURE_FOCUS_PASSWORD
 
-docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register focus auth.jitsi.test.marcschuh.de YOUR_SECURE_FOCUS_PASSWORD
-
-port 10000/udp
-and 
-      - "5222:5222"
-      - "5347:5347"
-      - "5280:5280"
-
-
-for user: docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register marc jitsi.test.marcschuh.de EnpnLUWbmmXV27sVQ 
+for user: docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register marc jitsi.test.mydomain.de SomeUltraSecret

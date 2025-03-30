@@ -3,17 +3,17 @@ services:
   # Nginx (reverse proxy)
   # ------------------------------------------------------
   nginx:
-    image: nginx:alpine
-    container_name: nginx_reverse_proxy
-    restart: unless-stopped
+    image: ${NGINX_IMAGE}
+    container_name: ${NGINX_CONTAINER_NAME}
+    restart: ${RESTART_POLICY}
     volumes:
-      - /home/marc/general_infrastructure_data/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${DATA_DIR}/proxy/config/nginx.conf:/etc/nginx/nginx.conf:ro
       # Make ACME challenge folder available to Certbot
-      - /home/marc/general_infrastructure_data/proxy/certbot-challenges:/var/www/certbot-challenges
-      - /home/marc/general_infrastructure_data/proxy/certbot-etc:/etc/letsencrypt:ro
+      - ${DATA_DIR}/proxy/certbot-challenges:/var/www/certbot-challenges
+      - ${DATA_DIR}/proxy/certbot-etc:/etc/letsencrypt:ro
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
     networks:
       - proxy_network
       - jitsi_network
@@ -22,22 +22,20 @@ services:
   # Certbot (handles Let's Encrypt certificates)
   # ------------------------------------------------------
   certbot:
-    image: certbot/certbot:latest
-    container_name: certbot_le
+    image: ${CERTBOT_IMAGE}
+    container_name: ${CERTBOT_CONTAINER_NAME}
     volumes:
       # Where Certbot stores certificates
-      - /home/marc/general_infrastructure_data/proxy/certbot-etc:/etc/letsencrypt
+      - ${DATA_DIR}/proxy/certbot-etc:/etc/letsencrypt
       # ACME challenge folder
-      - /home/marc/general_infrastructure_data/proxy/certbot-challenges:/var/www/certbot-challenges
-      - /home/marc/general_infrastructure_data/proxy/certbot-logs:/var/log/letsencrypt
-      #entrypoint: /bin/bash
+      - ${DATA_DIR}/proxy/certbot-challenges:/var/www/certbot-challenges
+      - ${DATA_DIR}/proxy/certbot-logs:/var/log/letsencrypt
     networks:
       - proxy_network
 
 networks:
   proxy_network:
-    driver: bridge
+    driver: ${NETWORK_DRIVER}
   jitsi_network:
     external: true
-
 
