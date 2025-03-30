@@ -1,33 +1,143 @@
-# Infrastructure
+# Einführung
+Dieses Repository ist ein Infrastrukturbeispiel für die Verwendung von Docker-Compose für Services wie Jitsi, Wordpress und Nextcloud. 
+Es soll einen leichtgewichtigen Einstieg zu diesen Tools ermöglichen und die Vorteile von Infrastructure as Code verdeutlichen
 
+# Voraussetzungen
+Folgende Voraussetzungen sollten erfüllt sein:
+- Ein Linux Server (bis jetzt ist die Software mit Ubuntu 24.04 getestet)
+- Eine Internet-Domain 
+- Kontrolle über den DNS Server
+- Docer Compose (v.2.33.1 or later)
+- Open ports on your firewall (see Firewall Configuration section)
 
-Steps:
-- Ensure all files are present
-22/tcp
-80/tcp
-443/tcp
-10000/udp 
-8000/tcp
-8443/tcp
-3478/udp
-5349/udp
+Sorge dafür, dass die Webseite, unter der die Dienste erreichbar sein sollen in deinem Domainverwalter entsprechend eingetragen ist. 
 
+## Docker
+Installiere docker mittels
 
-Create docker network
+```shell
+sudo apt install docker docker-compose
+```
+
+Enable deinen Nutzer docker ausführen zu können
+
+```shell
+sudo usermod -aG docker $USER
+```
+
+## Firewall
+Versichere dich, dass die Firewall up and ready ist:
+
+```shell
+sudo apt install ufw
+
+```
+
+```shell
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 8000/tcp
+sudo ufw allow 8443/tcp
+sudo ufw allow 10000/udp
+sudo ufw allow 3478/udp
+sudo ufw allow 5349/tcp
+sudo ufw enable
+```
+
+```shell
+sudo ufw status
+```
+
+### File2ban
+Optional aber sehr hilfreich: 
+
+```shell
+sudo apt install fail2ban
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+```
+
+Die Default Settings von  ```/etc/fail2ban/jail.local``` sind in Ordnung, jedoch verwende ich:
+```shell
+[sshd]
+enabled = true
+port    = ssh
+logpath = %(sshd_log)s
+backend = %(sshd_backend)s
+maxretry = 3
+findtime = 1200
+bantime = 1200
+```
+Enable und starte `fail2ban` neu
+```shell
+sudo systemctl enable fail2ban 
+sudo systemctl start fail2ban
+```
+Überprüfe, dass `fail2ban` läuft:
+```shell
+systemctl status fail2ban
+```
+und dass bans auftreten
+```shell
+fail2ban-client status sshd
+```
+Generell kann es auch sinnvoll sein, password login über ssh zu verbieten und nur auth per public-key Verfahren zu erlauben.
+
+# Jitsi
+For this setup the `docker-compose.jitsi.yml` and `docker-compose.proxy.yml`are important.
+Both assume that a `.env` file is present, similar to the `env-example`.
+Ensure that all paths are present and have the access setting `755`.
+
+Start with creating the Docker network
+
+```shell
 docker network create jitsi_network
+```
 
-zuerst in der nginx.conf den Teil disablen, der die Zertifikate braucht. Die kommen im zweiten Schritt
+Comment out the SSL-part in the `nginx.conf`
 
-~/docker-compose-linux-x86_64 -f docker-compose.jitsi.yml up -d
+```text
+        listen 443 ssl;
+        listen [::]:443 ssl;
+        server_name jitsi.test.mydomain.de;
 
-Zertifikate anlegen
+        ssl_certificate /etc/letsencrypt/live/jitsi.test.mydomain.de/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/jitsi.test.mydomain.de/privkey.pem;
+```
+otherwise the nginx server will not start. 
 
-~/docker-compose-linux-x86_64 -f docker-compose.proxy.yml run --rm certbot certonly --webroot -w /var/www/certbot-challenges -d jitsi.test.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
+Start the nginx-server
+```shell
+docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
+```
 
+## Certificate
+Get a certificate for your domain via
 
-register user:
-docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register youruser auth.jitsi.test.mydomain.de yourpassword
+```shell
+docker-compose -f docker-compose.proxy.yml run --rm certbot certonly \
+  --webroot -w /var/www/certbot-challenges \
+  -d jitsi.example.com \
+  --email your-email@example.com \
+  --agree-tos --no-eff-email
+```
 
-docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register focus auth.jitsi.test.mydomain.de YOUR_SECURE_FOCUS_PASSWORD
+Remove the comments in the `nginx.conf` and restart the nginx-server
 
-for user: docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register marc jitsi.test.mydomain.de SomeUltraSecret
+```shell
+docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
+```
+
+## Jitsi user
+Before starting your Jitsi, ensure that all passwords are set to proper values.
+Start your Jitsi via
+```shell
+docker-compose -f docker-compose.jitsi.yml up -d --force-recreate --build
+```
+
+Add users via
+```shell
+docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register my_user jitsi.mydomain.de SuperSecretPassword
+```
+
+and with that your Jitsi should be up and running

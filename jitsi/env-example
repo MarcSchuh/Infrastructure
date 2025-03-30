@@ -5,7 +5,7 @@
 PUBLIC_URL=https://jitsi.test.mydomain.de
 
 # Directory for persistent configuration storage
-CONFIG_DIR=/home/marc/general_infrastructure_data/jitsi/config
+CONFIG_DIR=/path/to/jitsi/config
 
 # Web interface port mappings
 HTTP_PORT=8000
