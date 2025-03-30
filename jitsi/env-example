@@ -1,0 +1,77 @@
+#-----------------------------------------------------------------------
+# BASIC SETUP
+#-----------------------------------------------------------------------
+# Base URL of your Jitsi instance (must match your domain)
+PUBLIC_URL=https://jitsi.test.mydomain.de
+
+# Directory for persistent configuration storage
+CONFIG_DIR=/home/marc/general_infrastructure_data/jitsi/config
+
+# Web interface port mappings
+HTTP_PORT=8000
+HTTPS_PORT=8443
+
+# Docker network name
+NETWORK=jitsi_network
+
+#-----------------------------------------------------------------------
+# XMPP CONFIGURATION
+#-----------------------------------------------------------------------
+# Main domain for XMPP services
+XMPP_DOMAIN=jitsi.test.mydomain.de
+
+# Authentication domain for registered users
+XMPP_AUTH_DOMAIN=auth.jitsi.test.mydomain.de
+
+# Guest domain for anonymous users
+XMPP_GUEST_DOMAIN=guest.jitsi.test.mydomain.de
+
+# Multi-user chat domain
+XMPP_MUC_DOMAIN=muc.${XMPP_DOMAIN}
+
+# Internal MUC domain used by JVB for the brewery
+XMPP_INTERNAL_MUC_DOMAIN=internal-muc.${XMPP_DOMAIN}
+
+# XMPP server hostname (internal Docker service name)
+XMPP_SERVER=prosody
+
+# BOSH and WebSocket URLs for XMPP connections
+XMPP_BOSH_URL_BASE=http://prosody:5280
+XMPP_WEBSOCKET=ws://prosody:5280/xmpp-websocket
+ENABLE_XMPP_WEBSOCKET=1
+
+#-----------------------------------------------------------------------
+# AUTHENTICATION SETTINGS
+#-----------------------------------------------------------------------
+# Enable authentication (1=enabled, 0=disabled)
+ENABLE_AUTH=1
+
+# Authentication type (internal_hashed = username/password stored in Prosody)
+AUTH_TYPE=internal_hashed
+
+# Allow guests to join meetings created by authenticated users
+ENABLE_GUESTS=1
+
+# Disable Let's Encrypt (assuming you handle SSL separately)
+ENABLE_LETSENCRYPT=0
+
+#-----------------------------------------------------------------------
+# COMPONENT CREDENTIALS
+# IMPORTANT: Replace these with secure passwords in production!
+#-----------------------------------------------------------------------
+# Jicofo (conference focus) credentials
+JICOFO_COMPONENT_SECRET=YOUR_JICOFO_COMPONENT_SECRET
+JICOFO_AUTH_USER=focus
+JICOFO_AUTH_PASSWORD=YOUR_SECURE_FOCUS_PASSWORD
+
+# JVB (Jitsi Videobridge) credentials
+JVB_AUTH_USER=jvb
+JVB_AUTH_PASSWORD=YOUR_SECURE_JVB_PASSWORD
+
+#-----------------------------------------------------------------------
+# ADDITIONAL SETTINGS
+#-----------------------------------------------------------------------
+# Uncomment and set these for production environments
+# JVB_ADVERTISE_IPS=your-server-public-ip
+# TZ=Europe/Berlin
+# DOCKER_HOST_ADDRESS=your-server-public-ip
