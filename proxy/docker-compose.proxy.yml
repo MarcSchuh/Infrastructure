@@ -37,14 +37,19 @@ services:
   certbot-renew:
     image: ${CERTBOT_IMAGE}
     container_name: ${CERTBOT_CONTAINER_NAME}_renew
+    restart: always
     volumes:
       - ${DATA_DIR}/proxy/certbot-etc:/etc/letsencrypt
       - ${DATA_DIR}/proxy/certbot-challenges:/var/www/certbot-challenges
       - ${DATA_DIR}/proxy/certbot-logs:/var/log/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     entrypoint: >
       sh -c "
-      echo '0 3 * * * certbot renew --webroot -w /var/www/certbot-challenges --deploy-hook \"nginx -s reload\" >> /var/log/letsencrypt/renew.log 2>&1' | crontab -
-      crond -f -d 8
+      apk add --no-cache docker-cli &&
+      mkdir -p /etc/crontabs &&
+      echo '0 3 * * * certbot renew --webroot -w /var/www/certbot-challenges --post-hook \"docker exec ${NGINX_CONTAINER_NAME} nginx -s reload\" >> /var/log/letsencrypt/renew.log 2>&1' > /etc/crontabs/root &&
+      echo 'Crontab installed. Starting cron daemon...' &&
+      crond -f -l 8
       "
     networks:
       - proxy_network
