@@ -33,6 +33,22 @@ services:
     networks:
       - proxy_network
 
+  # Handle renew of the certificates
+  certbot-renew:
+    image: ${CERTBOT_IMAGE}
+    container_name: ${CERTBOT_CONTAINER_NAME}_renew
+    volumes:
+      - ${DATA_DIR}/proxy/certbot-etc:/etc/letsencrypt
+      - ${DATA_DIR}/proxy/certbot-challenges:/var/www/certbot-challenges
+      - ${DATA_DIR}/proxy/certbot-logs:/var/log/letsencrypt
+    entrypoint: >
+      sh -c "
+      echo '0 3 * * * certbot renew --webroot -w /var/www/certbot-challenges --deploy-hook \"nginx -s reload\" >> /var/log/letsencrypt/renew.log 2>&1' | crontab -
+      crond -f -d 8
+      "
+    networks:
+      - proxy_network
+
 networks:
   proxy_network:
     driver: ${NETWORK_DRIVER}
