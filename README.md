@@ -1,37 +1,39 @@
-# Einführung
-Dieses Repository ist ein Infrastrukturbeispiel für die Verwendung von Docker-Compose für Services wie Jitsi, Wordpress und Nextcloud. 
-Es soll einen leichtgewichtigen Einstieg zu diesen Tools ermöglichen und die Vorteile von Infrastructure as Code verdeutlichen
+# Infrastructure Repository
 
-# Voraussetzungen
-Folgende Voraussetzungen sollten erfüllt sein:
-- Ein Linux Server (bis jetzt ist die Software mit Ubuntu 24.04 getestet)
-- Eine Internet-Domain 
-- Kontrolle über den DNS Server
-- Docer Compose (v.2.33.1 or later)
+## Introduction
+This repository serves as an infrastructure example for using Docker Compose to deploy services such as Jitsi, WordPress, and Nextcloud. It aims to provide a lightweight introduction to these tools and demonstrate the benefits of Infrastructure as Code.
+
+## Prerequisites
+The following requirements should be met:
+- A Linux server (currently tested with Ubuntu 24.04)
+- An internet domain
+- Control over DNS settings
+- Docker Compose (v2.33.1 or later)
 - Open ports on your firewall (see Firewall Configuration section)
 
-Sorge dafür, dass die Webseite, unter der die Dienste erreichbar sein sollen in deinem Domainverwalter entsprechend eingetragen ist. 
+Ensure that the website where the services should be accessible is properly configured in your domain management.
 
 ## Docker
-Installiere docker mittels
+Install Docker using:
 
 ```shell
 sudo apt install docker docker-compose
 ```
 
-Enable deinen Nutzer docker ausführen zu können
+Enable your user to run Docker without sudo:
 
 ```shell
 sudo usermod -aG docker $USER
 ```
 
 ## Firewall
-Versichere dich, dass die Firewall up and ready ist:
+Make sure the firewall is up and properly configured:
 
 ```shell
 sudo apt install ufw
-
 ```
+
+Configure the necessary ports:
 
 ```shell
 sudo ufw allow 22/tcp
@@ -45,20 +47,22 @@ sudo ufw allow 5349/tcp
 sudo ufw enable
 ```
 
+Check the firewall status:
+
 ```shell
 sudo ufw status
 ```
 
 ### File2ban
-Optional aber sehr hilfreich: 
+Optional but highly recommended:
 
 ```shell
 sudo apt install fail2ban
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 ```
 
-Die Default Settings von  ```/etc/fail2ban/jail.local``` sind in Ordnung, jedoch verwende ich:
-```shell
+The default settings in  ```/etc/fail2ban/jail.local``` are fine, but I recommend:
+```text
 [sshd]
 enabled = true
 port    = ssh
@@ -68,27 +72,30 @@ maxretry = 3
 findtime = 1200
 bantime = 1200
 ```
+
 Enable und starte `fail2ban` neu
 ```shell
 sudo systemctl enable fail2ban 
 sudo systemctl start fail2ban
 ```
-Überprüfe, dass `fail2ban` läuft:
+
+Verify that `fail2ban` is running:
 ```shell
 systemctl status fail2ban
 ```
-und dass bans auftreten
+
+And check if bans are occurring:
 ```shell
 fail2ban-client status sshd
 ```
-Generell kann es auch sinnvoll sein, password login über ssh zu verbieten und nur auth per public-key Verfahren zu erlauben.
+Generally, it's also advisable to disable password login over SSH and only allow authentication via public key methods.
 
 # Jitsi
-For this setup the `docker-compose.jitsi.yml` and `docker-compose.proxy.yml`are important.
+For this setup, the `docker-compose.jitsi.yml` and `docker-compose.proxy.yml`are important.
 Both assume that a `.env` file is present, similar to the `env-example`.
 Ensure that all paths are present and have the access setting `755`.
 
-Start with creating the Docker network
+Start by creating the Docker network:
 
 ```shell
 docker network create jitsi_network
@@ -112,7 +119,7 @@ docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
 ```
 
 ## Certificate
-Get a certificate for your domain via
+Get a certificate for your domain via:
 
 ```shell
 docker-compose -f docker-compose.proxy.yml run --rm certbot certonly \
@@ -122,7 +129,7 @@ docker-compose -f docker-compose.proxy.yml run --rm certbot certonly \
   --agree-tos --no-eff-email
 ```
 
-Remove the comments in the `nginx.conf` and restart the nginx-server
+Remove the comments in the `nginx.conf` and restart the nginx-server:
 
 ```shell
 docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
