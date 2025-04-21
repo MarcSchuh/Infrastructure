@@ -1,5 +1,10 @@
 # Infrastructure Repository
 
+## General remarks
+Please be aware, that this repository is in the beta status. 
+Especially the nginx-example is not in a state, where it can be rolled out as is, because the SSL-part depends on certificates that can only be created, if the http-part is enabled.
+It is recommended to first disable all SSL-parts in the nginx config, carry out the necessary certificate creation steps and then enable it again.
+
 ## Introduction
 This repository serves as an infrastructure example for using Docker Compose to deploy services such as Jitsi, WordPress, and Nextcloud. It aims to provide a lightweight introduction to these tools and demonstrate the benefits of Infrastructure as Code.
 
@@ -148,3 +153,27 @@ docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua regist
 ```
 
 and with that your Jitsi should be up and running
+
+## WordPress
+Create the necessary folders for WordPress:
+
+```shell
+mkdir -p ${DATA_DIR}/wordpress/html
+mkdir -p ${DATA_DIR}/wordpress/db
+chmod -R 755 ${DATA_DIR}/wordpress
+```
+
+ensure that your `.env` file is readily configured. 
+Start your WordPress containers via
+
+```shell
+docker-compose -f docker-compose.wordpress.yml up -d
+```
+disable the SSL-part in the nginx.config and get the certificates:
+```shell
+docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w /var/www/certbot-challenges -d wordpress.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
+```
+
+enable the SSL-parts again. 
+The certbot will automatically take care of this certificate, too. 
+
