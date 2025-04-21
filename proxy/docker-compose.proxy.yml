@@ -57,6 +57,7 @@ services:
 networks:
   proxy_network:
     driver: ${NETWORK_DRIVER}
+    external: true
   jitsi_network:
     external: true
 
