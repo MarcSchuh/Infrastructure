@@ -6,9 +6,9 @@ services:
     restart: ${RESTART_POLICY}
     environment:
       WORDPRESS_DB_HOST: wordpress_db
-      WORDPRESS_DB_USER: ${WP_DB_USER}
-      WORDPRESS_DB_PASSWORD: ${WP_DB_PASSWORD}
-      WORDPRESS_DB_NAME: ${WP_DB_NAME}
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
       WORDPRESS_TABLE_PREFIX: ${WP_TABLE_PREFIX}
     volumes:
       - ${DATA_DIR}/wordpress/html:/var/www/html
@@ -24,10 +24,10 @@ services:
     container_name: wordpress_db
     restart: ${RESTART_POLICY}
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${WP_DB_NAME}
-      MYSQL_USER: ${WP_DB_USER}
-      MYSQL_PASSWORD: ${WP_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ${DATA_DIR}/wordpress/db:/var/lib/mysql
     networks:
