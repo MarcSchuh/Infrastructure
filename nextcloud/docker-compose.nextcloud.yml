@@ -1,0 +1,58 @@
+services:
+  nextcloud_app:
+    image: nextcloud:${NEXTCLOUD_VERSION}
+    container_name: nextcloud_app
+    restart: unless-stopped
+    networks:
+      - nextcloud_network
+      - proxy_network
+    depends_on:
+      - nextcloud_db
+      - nextcloud_redis
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_HOST=nextcloud_db
+      - REDIS_HOST=nextcloud_redis
+      - PHP_UPLOAD_LIMIT=${PHP_UPLOAD_LIMIT}
+
+  nextcloud_db:
+    image: mariadb:${MARIADB_VERSION}
+    container_name: nextcloud_db
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED
+    networks:
+      - nextcloud_network
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/db:/var/lib/mysql
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MARIADB_AUTO_UPGRADE=1
+
+  nextcloud_redis:
+    image: redis:${REDIS_VERSION}
+    container_name: nextcloud_redis
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/redis:/data
+    networks:
+      - nextcloud_network
+
+networks:
+  nextcloud_network:
+    name: nextcloud_network
+    driver: bridge
+  proxy_network:
+    external: true
+

@@ -17,6 +17,7 @@ services:
     networks:
       - proxy_network
       - jitsi_network
+      - nextcloud_network
 
   # ------------------------------------------------------
   # Certbot (handles Let's Encrypt certificates)
@@ -59,5 +60,7 @@ networks:
     driver: ${NETWORK_DRIVER}
     external: true
   jitsi_network:
+    external: true
+  nextcloud_network:
     external: true
 
