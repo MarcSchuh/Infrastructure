@@ -1,7 +1,7 @@
 services:
   # WordPress container
   wordpress:
-    image: wordpress:latest
+    image: wordpress:${VERSION}
     container_name: wordpress
     restart: ${RESTART_POLICY}
     environment:
