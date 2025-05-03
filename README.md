@@ -177,3 +177,49 @@ docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w 
 enable the SSL-parts again. 
 The certbot will automatically take care of this certificate, too. 
 
+
+## Nextcloud
+
+Create necessary dirs
+```shell
+mkdir -p ${NEXTCLOUD_DATA_DIR}/app
+mkdir -p ${NEXTCLOUD_DATA_DIR}/db
+mkdir -p ${NEXTCLOUD_DATA_DIR}/redis
+chmod -R 755 ${NEXTCLOUD_DATA_DIR}/
+```
+
+and ensure that `.env` is set.
+
+Start your nextcloud again via:
+```shell
+docker-compose -f docker-compose.nextcloud.yml up -d
+```
+disable the SSL-part in the nginx.config and get the certificates:
+```shell
+docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w /var/www/certbot-challenges -d nextcloud.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
+```
+
+### Useful commands
+Sometimes nextcloud need a bit of help.
+To import an existing database, use:
+```shell
+docker cp  /pat/to/nextcloud/backup.sql nextcloud_db:/tmp/
+docker exec -it nextcloud_db bash -c "mariadb -u root -p"YourRootPassword" nextcloud < /tmp/backup.sql"
+```
+
+Messing with the database can be done via:
+```shell
+docker exec -it nextcloud_db bash -c "mariadb -u root -p'YourRootPassword' -e \"ALTER DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;\""
+```
+
+And to play a bit with the nextcloud itself, use
+
+```shell
+docker exec -u www-data -it nextcloud_app php occ maintenance:mode --on
+docker exec -u www-data -it nextcloud_app php occ maintenance:repair
+```
+
+### Observation
+When moving a nextcloud instance, do not plain copy all in `html` to the new folder but instead only copy the content of `data`, `apps` and `themes`.
+Adapt your `config.php` with care and do not overwrite everything. 
+Especially the instance-id has to be kept as it is unique. 
