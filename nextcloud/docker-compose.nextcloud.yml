@@ -3,6 +3,8 @@ services:
     image: nextcloud:${NEXTCLOUD_VERSION}
     container_name: nextcloud_app
     restart: unless-stopped
+    env_file:
+      - .env
     networks:
       - nextcloud_network
       - proxy_network
@@ -26,6 +28,8 @@ services:
     image: mariadb:${MARIADB_VERSION}
     container_name: nextcloud_db
     restart: unless-stopped
+    env_file:
+      - .env
     command: --transaction-isolation=READ-COMMITTED
     networks:
       - nextcloud_network
@@ -44,10 +48,36 @@ services:
   nextcloud_redis:
     image: redis:${REDIS_VERSION}
     container_name: nextcloud_redis
+    restart: unless-stopped
+    env_file:
+      - .env
     volumes:
       - ${NEXTCLOUD_DATA_DIR}/redis:/data
     networks:
       - nextcloud_network
+
+  cron:
+    image: nextcloud:${NEXTCLOUD_VERSION}
+    container_name: nextcloud_cron
+    restart: unless-stopped
+    networks:
+      - nextcloud_network
+    depends_on:
+      - nextcloud_app
+      - nextcloud_db
+    env_file:
+      - .env
+    environment:
+      - MYSQL_HOST=nextcloud_db
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - REDIS_HOST=nextcloud_redis
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
+    user: "www-data"
+    entrypoint: /cron.sh
+
 
 networks:
   nextcloud_network:
