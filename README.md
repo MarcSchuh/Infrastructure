@@ -210,6 +210,7 @@ docker exec -it nextcloud_db bash -c "mariadb -u root -p"YourRootPassword" nextc
 Messing with the database can be done via:
 ```shell
 docker exec -it nextcloud_db bash -c "mariadb -u root -p'YourRootPassword' -e \"ALTER DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;\""
+docker exec -it nextcloud_db bash -c "mariadb -u root -p'YourRootPassword' -e \"GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextclouduser'@'%';\""
 ```
 
 And to play a bit with the nextcloud itself, use
