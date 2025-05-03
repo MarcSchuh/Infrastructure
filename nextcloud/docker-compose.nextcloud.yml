@@ -75,7 +75,6 @@ services:
       - REDIS_HOST=nextcloud_redis
     volumes:
       - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
-    user: "www-data"
     entrypoint: /cron.sh
 
 
