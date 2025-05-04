@@ -236,3 +236,6 @@ docker exec nextcloud_fail2ban fail2ban-client set nextcloud unbanip 192.168.1.1
 When moving a nextcloud instance, do not plain copy all in `html` to the new folder but instead only copy the content of `data`, `apps` and `themes`.
 Adapt your `config.php` with care and do not overwrite everything. 
 Especially the instance-id has to be kept as it is unique. 
+
+## Watchtower
+Watchtower keeps all docker images up-to-date if they have the tag `latest`.
