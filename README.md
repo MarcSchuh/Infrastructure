@@ -185,6 +185,9 @@ Create necessary dirs
 mkdir -p ${NEXTCLOUD_DATA_DIR}/app
 mkdir -p ${NEXTCLOUD_DATA_DIR}/db
 mkdir -p ${NEXTCLOUD_DATA_DIR}/redis
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d
 chmod -R 755 ${NEXTCLOUD_DATA_DIR}/
 ```
 
@@ -198,6 +201,8 @@ disable the SSL-part in the nginx.config and get the certificates:
 ```shell
 docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w /var/www/certbot-challenges -d nextcloud.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
 ```
+
+Copy the `filter.d`, `action.d` and `jail.d` to the corresponding folders and name them each `nextcloud.conf`
 
 ### Useful commands
 Sometimes nextcloud need a bit of help.
@@ -219,6 +224,13 @@ And to play a bit with the nextcloud itself, use
 docker exec -u www-data -it nextcloud_app php occ maintenance:mode --on
 docker exec -u www-data -it nextcloud_app php occ maintenance:repair
 ```
+
+unbanning in fail2ban
+```shell
+docker exec nextcloud_fail2ban fail2ban-client status nextcloud
+docker exec nextcloud_fail2ban fail2ban-client set nextcloud unbanip 192.168.1.100
+```
+
 
 ### Observation
 When moving a nextcloud instance, do not plain copy all in `html` to the new folder but instead only copy the content of `data`, `apps` and `themes`.
