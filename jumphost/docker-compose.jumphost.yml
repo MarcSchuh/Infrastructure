@@ -1,0 +1,19 @@
+
+services:
+  jumphost:
+    image: linuxserver/openssh-server:${SSH_SERVER_VERSION}
+    container_name: jumphost
+    env_file:
+      - .env
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - PASSWORD_ACCESS=false
+      - USER_NAME=jumphost
+    restart: ${RESTART_POLICY}
+    ports:
+      - "${SSH_PORT}:${SSH_PORT}"
+      - "${JUMP_PORT}:${JUMP_PORT}"
+    volumes:
+      - /home/marc/general_infrastructure_data/jumphost:/config
