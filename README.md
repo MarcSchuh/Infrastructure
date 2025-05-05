@@ -42,9 +42,7 @@ Configure the necessary ports:
 
 ```shell
 sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow 10000/udp
+sudo ufw enable
 ```
 
 Check the firewall status:
@@ -238,13 +236,6 @@ Watchtower keeps all docker images up-to-date if they have the tag `latest`.
 ## Jumphost
 I have a small computer at home, which I cannot reach directly from outside. 
 Therefor I installed a jumphost.
-
-Enable different ports for this ssh:
-
-```shell
-ufw allow ${SSH_PORT}
-ufw allow ${JUMP_PORT}
-```
 
 Create directory to edit config:
 ```shell

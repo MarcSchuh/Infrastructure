@@ -2,7 +2,7 @@ services:
   nextcloud_app:
     image: nextcloud:${NEXTCLOUD_VERSION}
     container_name: nextcloud_app
-    restart: unless-stopped
+    restart: ${RESTART_POLICY}
     env_file:
       - .env
     networks:
@@ -27,7 +27,7 @@ services:
   nextcloud_db:
     image: mariadb:${MARIADB_VERSION}
     container_name: nextcloud_db
-    restart: unless-stopped
+    restart: ${RESTART_POLICY}
     env_file:
       - .env
     command: --transaction-isolation=READ-COMMITTED
@@ -45,21 +45,10 @@ services:
       - DB_USER=${DB_USER}
       - MARIADB_AUTO_UPGRADE=1
 
-  nextcloud_redis:
-    image: redis:${REDIS_VERSION}
-    container_name: nextcloud_redis
-    restart: unless-stopped
-    env_file:
-      - .env
-    volumes:
-      - ${NEXTCLOUD_DATA_DIR}/redis:/data
-    networks:
-      - nextcloud_network
-
   nextcloud_cron:
     image: nextcloud:${NEXTCLOUD_VERSION}
     container_name: nextcloud_cron
-    restart: unless-stopped
+    restart: ${RESTART_POLICY}
     networks:
       - nextcloud_network
     depends_on:
@@ -77,8 +66,19 @@ services:
       - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
     entrypoint: /cron.sh
 
+  nextcloud_redis:
+    image: redis:${REDIS_VERSION}
+    container_name: nextcloud_redis
+    restart: ${RESTART_POLICY}
+    env_file:
+      - .env
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/redis:/data
+    networks:
+      - nextcloud_network
+
   nextcloud_fail2ban:
-    image: crazymax/fail2ban:latest  # or your preferred fail2ban image
+    image: crazymax/fail2ban:${FAIL2BAN_VERSION}
     container_name: nextcloud_fail2ban
     restart: unless-stopped
     volumes:
