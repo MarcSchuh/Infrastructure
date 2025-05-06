@@ -1,8 +1,8 @@
 services:
   nextcloud_app:
-    image: nextcloud:${NEXTCLOUD_VERSION}
-    container_name: nextcloud_app
-    restart: ${RESTART_POLICY}
+    image: nextcloud:${NEXTCLOUD_VERSION:-latest}
+    container_name: ${NEXTCLOUD_APP_CONTAINER_NAME:-nextcloud_app}
+    restart: ${RESTART_POLICY:-unless-stopped}
     env_file:
       - .env
     networks:
@@ -17,20 +17,27 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TIMEZONE}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - MYSQL_HOST=nextcloud_db
-      - REDIS_HOST=nextcloud_redis
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_HOST=${NEXTCLOUD_DB_CONTAINER_NAME:-nextcloud_db}
+      - REDIS_HOST=${NEXTCLOUD_REDIS_CONTAINER_NAME:-nextcloud_redis}
+      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
       - PHP_UPLOAD_LIMIT=${PHP_UPLOAD_LIMIT}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/status.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   nextcloud_db:
     image: mariadb:${MARIADB_VERSION}
-    container_name: nextcloud_db
-    restart: ${RESTART_POLICY}
+    container_name: ${NEXTCLOUD_DB_CONTAINER_NAME:-nextcloud_db}
+    restart: ${RESTART_POLICY:-unless-stopped}
     env_file:
       - .env
-    command: --transaction-isolation=READ-COMMITTED
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW 
     networks:
       - nextcloud_network
     volumes:
@@ -39,16 +46,22 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TIMEZONE}
-      - ROOT_PASSWORD=${ROOT_PASSWORD}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
+      - MYSQL_ROOT_PASSWORD=${ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
       - MARIADB_AUTO_UPGRADE=1
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${ROOT_PASSWORD:-changeme}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   nextcloud_cron:
-    image: nextcloud:${NEXTCLOUD_VERSION}
-    container_name: nextcloud_cron
-    restart: ${RESTART_POLICY}
+    image: nextcloud:${NEXTCLOUD_VERSION:-latest}
+    container_name: ${NEXTCLOUD_CRON_CONTAINER_NAME:-nextcloud_cron}
+    restart: ${RESTART_POLICY:-unless-stopped}
     networks:
       - nextcloud_network
     depends_on:
@@ -57,32 +70,45 @@ services:
     env_file:
       - .env
     environment:
-      - MYSQL_HOST=nextcloud_db
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - REDIS_HOST=nextcloud_redis
+      - MYSQL_HOST=${NEXTCLOUD_DB_CONTAINER_NAME:-nextcloud_db}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=${NEXTCLOUD_REDIS_CONTAINER_NAME:-nextcloud_redis}
+      - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
     entrypoint: /cron.sh
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q 'cron'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   nextcloud_redis:
-    image: redis:${REDIS_VERSION}
-    container_name: nextcloud_redis
-    restart: ${RESTART_POLICY}
+    image: redis:${REDIS_VERSION:-alpine}
+    container_name: ${NEXTCLOUD_REDIS_CONTAINER_NAME:-nextcloud_redis}
+    restart: ${RESTART_POLICY:-unless-stopped}
     env_file:
       - .env
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
       - ${NEXTCLOUD_DATA_DIR}/redis:/data
     networks:
       - nextcloud_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   nextcloud_fail2ban:
-    image: crazymax/fail2ban:${FAIL2BAN_VERSION}
-    container_name: nextcloud_fail2ban
-    restart: unless-stopped
+    image: crazymax/fail2ban:${FAIL2BAN_VERSION:-latest}
+    container_name: ${NEXTCLOUD_FAIL2BAN_CONTAINER_NAME:-nextcloud_fail2ban}
+    restart: ${RESTART_POLICY:-unless-stopped}
     volumes:
-      - ${NEXTCLOUD_DATA_DIR}${NEXTCLOUD_LOG_PATH}:/var/log/nextcloud/nextcloud.log:ro  # Mount data dir as read-only
+      - ${NEXTCLOUD_DATA_DIR}${NEXTCLOUD_LOG_PATH:-/html/data/nextcloud.log}:/var/log/nextcloud/nextcloud.log:ro  # Mount data dir as read-only
       - ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d  # Your fail2ban configuration
       - ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d  # Custom filters
       - ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d
@@ -90,6 +116,12 @@ services:
     cap_add:
       - NET_ADMIN
       - NET_RAW
+    healthcheck:
+      test: ["CMD-SHELL", "fail2ban-client ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 
 networks:
