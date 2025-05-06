@@ -42,13 +42,6 @@ Configure the necessary ports:
 
 ```shell
 sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow 8000/tcp
-sudo ufw allow 8443/tcp
-sudo ufw allow 10000/udp
-sudo ufw allow 3478/udp
-sudo ufw allow 5349/tcp
 sudo ufw enable
 ```
 
@@ -177,3 +170,100 @@ docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w 
 enable the SSL-parts again. 
 The certbot will automatically take care of this certificate, too. 
 
+
+## Nextcloud
+
+Create necessary dirs
+```shell
+mkdir -p ${NEXTCLOUD_DATA_DIR}/app
+mkdir -p ${NEXTCLOUD_DATA_DIR}/db
+mkdir -p ${NEXTCLOUD_DATA_DIR}/redis
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d
+chmod -R 755 ${NEXTCLOUD_DATA_DIR}/
+```
+
+and ensure that `.env` is set.
+
+Start your nextcloud again via:
+```shell
+docker-compose -f docker-compose.nextcloud.yml up -d
+```
+disable the SSL-part in the nginx.config and get the certificates:
+```shell
+docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w /var/www/certbot-challenges -d nextcloud.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
+```
+
+Copy the `filter.d`, `action.d` and `jail.d` to the corresponding folders and name them each `nextcloud.conf`
+
+### Useful commands
+Sometimes nextcloud need a bit of help.
+To import an existing database, use:
+```shell
+docker cp  /pat/to/nextcloud/backup.sql nextcloud_db:/tmp/
+docker exec -it nextcloud_db bash -c "mariadb -u root -p"YourRootPassword" nextcloud < /tmp/backup.sql"
+```
+
+Messing with the database can be done via:
+```shell
+docker exec -it nextcloud_db bash -c "mariadb -u root -p'YourRootPassword' -e \"ALTER DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;\""
+docker exec -it nextcloud_db bash -c "mariadb -u root -p'YourRootPassword' -e \"GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextclouduser'@'%';\""
+```
+
+And to play a bit with the nextcloud itself, use
+
+```shell
+docker exec -u www-data -it nextcloud_app php occ maintenance:mode --on
+docker exec -u www-data -it nextcloud_app php occ maintenance:repair
+```
+
+unbanning in fail2ban
+```shell
+docker exec nextcloud_fail2ban fail2ban-client status nextcloud
+docker exec nextcloud_fail2ban fail2ban-client set nextcloud unbanip 192.168.1.100
+```
+
+
+### Observation
+When moving a nextcloud instance, do not plain copy all in `html` to the new folder but instead only copy the content of `data`, `apps` and `themes`.
+Adapt your `config.php` with care and do not overwrite everything. 
+Especially the instance-id has to be kept as it is unique. 
+
+## Watchtower
+Watchtower keeps all docker images up-to-date if they have the tag `latest`.
+
+## Jumphost
+I have a small computer at home, which I cannot reach directly from outside. 
+Therefor I installed a jumphost.
+
+Create directory to edit config:
+```shell
+mkdir -p ${CONFIG_DIR}
+```
+
+Start docker, then edit in `${CONFIG_DIR}/sshd/sshd_config` and add
+```
+GatewayPorts yes
+PermitRootLogin no
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM no
+AllowTcpForwarding yes
+PermitTunnel yes
+PermitTTY no
+ForceCommand echo 'This account is restricted to SSH forwarding only.'
+```
+These settings ensure that the jumphost can only be used as jumphost.
+
+And, add at `${CONFIG_DIR}/.ssh/authorized_keys` your public key of the device you want to reach.
+
+On the computer you want to reach, you can start the tunnel via: 
+```shell
+/usr/bin/ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -N -R ${JUMP_PORT}:localhost:22 jumphost@ssh.mydomain.de -p ${SSH_PORT}
+```
+It is reasonable to service this as systemd. Assuming, you have started this from an account named `hook`, you can then reach your computer at home via
+
+```shell
+ssh -p ${JUMP_PORT} hook@ssh.mydomain.de
+``` 
