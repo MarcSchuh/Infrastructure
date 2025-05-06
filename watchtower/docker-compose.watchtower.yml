@@ -1,8 +1,10 @@
 services:
   watchtower:
-    image: containrrr/watchtower:latest
+    image: containrrr/watchtower:${WATCHTOWER_VERSION}
     container_name: watchtower
-    restart: unless-stopped
+    restart: ${RESTART_POLICY}
+    env_file:
+      - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 86400 --cleanup
+    command: --interval ${INTERVAL_TIME_IN_SECONDS} --cleanup

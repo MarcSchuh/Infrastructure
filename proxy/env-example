@@ -1,15 +1,14 @@
 # General settings
-DATA_DIR=/path/to/persistent/storage
+DATA_DIR=/path/to/data/dir/of/proxy
 RESTART_POLICY=unless-stopped
 NETWORK_DRIVER=bridge
 
 # Nginx settings
-NGINX_IMAGE=nginx:alpine
+NGINX_VERSION=stable
 NGINX_CONTAINER_NAME=nginx_reverse_proxy
 HTTP_PORT=80
 HTTPS_PORT=443
 
 # Certbot settings
-CERTBOT_IMAGE=certbot/certbot:latest
-CERTBOT_CONTAINER_NAME=certbot_le
+CERTBOT_VERSION=latest
 

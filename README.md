@@ -42,13 +42,6 @@ Configure the necessary ports:
 
 ```shell
 sudo ufw allow 22/tcp
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-sudo ufw allow 8000/tcp
-sudo ufw allow 8443/tcp
-sudo ufw allow 10000/udp
-sudo ufw allow 3478/udp
-sudo ufw allow 5349/tcp
 sudo ufw enable
 ```
 
@@ -239,3 +232,38 @@ Especially the instance-id has to be kept as it is unique.
 
 ## Watchtower
 Watchtower keeps all docker images up-to-date if they have the tag `latest`.
+
+## Jumphost
+I have a small computer at home, which I cannot reach directly from outside. 
+Therefor I installed a jumphost.
+
+Create directory to edit config:
+```shell
+mkdir -p ${CONFIG_DIR}
+```
+
+Start docker, then edit in `${CONFIG_DIR}/sshd/sshd_config` and add
+```
+GatewayPorts yes
+PermitRootLogin no
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM no
+AllowTcpForwarding yes
+PermitTunnel yes
+PermitTTY no
+ForceCommand echo 'This account is restricted to SSH forwarding only.'
+```
+These settings ensure that the jumphost can only be used as jumphost.
+
+And, add at `${CONFIG_DIR}/.ssh/authorized_keys` your public key of the device you want to reach.
+
+On the computer you want to reach, you can start the tunnel via: 
+```shell
+/usr/bin/ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -N -R ${JUMP_PORT}:localhost:22 jumphost@ssh.mydomain.de -p ${SSH_PORT}
+```
+It is reasonable to service this as systemd. Assuming, you have started this from an account named `hook`, you can then reach your computer at home via
+
+```shell
+ssh -p ${JUMP_PORT} hook@ssh.mydomain.de
+``` 

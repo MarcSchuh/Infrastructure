@@ -1,0 +1,5 @@
+CONFIG_DIR=/path/for/jumphost/config
+SSH_PORT=1234  # Usually not 22 as this is reserved for your host
+JUMP_PORT=5678 # The port you use to jump to your computer at home
+SSH_SERVER_VERSION=latest
+RESTART_POLICY=unless-stopped
