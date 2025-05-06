@@ -44,6 +44,12 @@ services:
       - .env
     networks:
       - jitsi_network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "ps aux | grep -v grep | grep -q jvb"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   # Web (Jitsi Meet web interface)
   web:
@@ -64,6 +70,12 @@ services:
     ports:
       - "${HTTP_PORT:-8000}:80"
       - "${HTTPS_PORT:-8443}:443"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/http-bind"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 networks:
   jitsi_network:
