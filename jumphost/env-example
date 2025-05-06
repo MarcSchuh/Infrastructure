@@ -1,5 +1,13 @@
+# env-example
+# Basic configuration
 CONFIG_DIR=/path/for/jumphost/config
-SSH_PORT=1234  # Usually not 22 as this is reserved for your host
+JUMPHOST_USER=jumphost
+
+# Port configuration
+SSH_PORT=1234  # The port you'll use to SSH into the jumphost (maps to 2222 in container)
 JUMP_PORT=5678 # The port you use to jump to your computer at home
+
+# Container settings
 SSH_SERVER_VERSION=latest
 RESTART_POLICY=unless-stopped
+TZ=Europe/Berlin
