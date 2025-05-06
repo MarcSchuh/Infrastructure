@@ -16,4 +16,4 @@ services:
       - "${SSH_PORT}:${SSH_PORT}"
       - "${JUMP_PORT}:${JUMP_PORT}"
     volumes:
-      - /home/marc/general_infrastructure_data/jumphost:/config
+      - ${CONFIG_DIR}:/config
