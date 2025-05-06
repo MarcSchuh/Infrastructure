@@ -1,9 +1,9 @@
 services:
   # WordPress container
   wordpress:
-    image: wordpress:${WORDPRESS_VERSION}
-    container_name: wordpress
-    restart: ${RESTART_POLICY}
+    image: wordpress:${WORDPRESS_VERSION:-latest}
+    container_name: ${WORDPRESS_CONTAINER_NAME:-wordpress}
+    restart: ${RESTART_POLICY:-unless-stopped}
     env_file:
       - .env
     environment:
@@ -19,12 +19,23 @@ services:
     networks:
       - wordpress_network
       - proxy_network
+    deploy:
+      resources:
+        limits:
+          memory: ${WORDPRESS_MEM_LIM:-1G}
+          cpus: ${WORDPRESS_CPU_LIM:-0.5}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # MariaDB container
   wordpress_db:
-    image: mariadb:${MARIADB_VERSION}
-    container_name: wordpress_db
-    restart: ${RESTART_POLICY}
+    image: mariadb:${MARIADB_VERSION:-latest}
+    container_name: ${WORDPRESS_DB_CONTAINER_NAME:-wordpress_db}
+    restart: ${RESTART_POLICY:-unless-stopped}
     env_file:
       - .env
     environment:
@@ -36,6 +47,17 @@ services:
       - ${DATA_DIR}/db:/var/lib/mysql
     networks:
       - wordpress_network
+    deploy:
+      resources:
+        limits:
+          memory: ${WORDPRESS_DB_MEM_LIM:-2G}
+          cpus: ${WORDPRESS_DB_CPU_LIM:-0.5}
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   wordpress_network:
