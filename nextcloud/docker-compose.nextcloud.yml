@@ -52,7 +52,7 @@ services:
       - MYSQL_USER=${DB_USER}
       - MARIADB_AUTO_UPGRADE=1
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${ROOT_PASSWORD:-changeme}"]
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "root", "-p${ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
