@@ -1,0 +1,101 @@
+services:
+  nextcloud_app:
+    image: nextcloud:${NEXTCLOUD_VERSION}
+    container_name: nextcloud_app
+    restart: ${RESTART_POLICY}
+    env_file:
+      - .env
+    networks:
+      - nextcloud_network
+      - proxy_network
+    depends_on:
+      - nextcloud_db
+      - nextcloud_redis
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MYSQL_HOST=nextcloud_db
+      - REDIS_HOST=nextcloud_redis
+      - PHP_UPLOAD_LIMIT=${PHP_UPLOAD_LIMIT}
+
+  nextcloud_db:
+    image: mariadb:${MARIADB_VERSION}
+    container_name: nextcloud_db
+    restart: ${RESTART_POLICY}
+    env_file:
+      - .env
+    command: --transaction-isolation=READ-COMMITTED
+    networks:
+      - nextcloud_network
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/db:/var/lib/mysql
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+      - ROOT_PASSWORD=${ROOT_PASSWORD}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - MARIADB_AUTO_UPGRADE=1
+
+  nextcloud_cron:
+    image: nextcloud:${NEXTCLOUD_VERSION}
+    container_name: nextcloud_cron
+    restart: ${RESTART_POLICY}
+    networks:
+      - nextcloud_network
+    depends_on:
+      - nextcloud_app
+      - nextcloud_db
+    env_file:
+      - .env
+    environment:
+      - MYSQL_HOST=nextcloud_db
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=nextcloud_redis
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
+    entrypoint: /cron.sh
+
+  nextcloud_redis:
+    image: redis:${REDIS_VERSION}
+    container_name: nextcloud_redis
+    restart: ${RESTART_POLICY}
+    env_file:
+      - .env
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}/redis:/data
+    networks:
+      - nextcloud_network
+
+  nextcloud_fail2ban:
+    image: crazymax/fail2ban:${FAIL2BAN_VERSION}
+    container_name: nextcloud_fail2ban
+    restart: unless-stopped
+    volumes:
+      - ${NEXTCLOUD_DATA_DIR}${NEXTCLOUD_LOG_PATH}:/var/log/nextcloud/nextcloud.log:ro  # Mount data dir as read-only
+      - ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d  # Your fail2ban configuration
+      - ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d  # Custom filters
+      - ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d
+    network_mode: "host"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+
+
+networks:
+  nextcloud_network:
+    name: nextcloud_network
+    driver: bridge
+  proxy_network:
+    external: true
+

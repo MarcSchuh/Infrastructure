@@ -1,0 +1,45 @@
+services:
+  # WordPress container
+  wordpress:
+    image: wordpress:${WORDPRESS_VERSION}
+    container_name: wordpress
+    restart: ${RESTART_POLICY}
+    env_file:
+      - .env
+    environment:
+      WORDPRESS_DB_HOST: wordpress_db
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+      WORDPRESS_TABLE_PREFIX: ${WP_TABLE_PREFIX}
+    volumes:
+      - ${DATA_DIR}/html:/var/www/html
+    depends_on:
+      - wordpress_db
+    networks:
+      - wordpress_network
+      - proxy_network
+
+  # MariaDB container
+  wordpress_db:
+    image: mariadb:${MARIADB_VERSION}
+    container_name: wordpress_db
+    restart: ${RESTART_POLICY}
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ${DATA_DIR}/db:/var/lib/mysql
+    networks:
+      - wordpress_network
+
+networks:
+  wordpress_network:
+    name: wordpress_network
+    driver: ${NETWORK_DRIVER}
+  proxy_network:
+    external: true

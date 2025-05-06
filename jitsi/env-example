@@ -11,6 +11,9 @@ CONFIG_DIR=/path/to/jitsi/config
 HTTP_PORT=8000
 HTTPS_PORT=8443
 
+RESTART_POLICY=unless-stopped
+JITSI_VERSION=stable
+
 # Docker network name
 NETWORK=jitsi_network
 
