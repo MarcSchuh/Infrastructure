@@ -1,19 +1,19 @@
 
 services:
   jumphost:
-    image: linuxserver/openssh-server:${SSH_SERVER_VERSION}
-    container_name: jumphost
+    image: linuxserver/openssh-server:${SSH_SERVER_VERSION:-latest}
+    container_name: ${JUMPHOST_NAME:-jumphost}
     env_file:
       - .env
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/Berlin
+      - TZ=${TZ:-Europe/Berlin}
       - PASSWORD_ACCESS=false
-      - USER_NAME=jumphost
-    restart: ${RESTART_POLICY}
+      - USER_NAME=${JUMPHOST_USER:-jumphost}
+    restart: ${RESTART_POLICY:-unless-stopped}
     ports:
-      - "${SSH_PORT}:${SSH_PORT}"
-      - "${JUMP_PORT}:${JUMP_PORT}"
+      - "${SSH_PORT:-1234}:${SSH_PORT:-1234}"
+      - "${JUMP_PORT:-5678}:${JUMP_PORT:-5678}"
     volumes:
       - ${CONFIG_DIR}:/config
