@@ -62,12 +62,13 @@ sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 The default settings in  ```/etc/fail2ban/jail.local``` are fine, but I recommend:
 ```text
 [sshd]
-enabled = true
+enabled = true 
 port    = ssh
+filter = sshd[mode=aggressive]
 logpath = %(sshd_log)s
 backend = %(sshd_backend)s
-maxretry = 3
-findtime = 1200
+maxretry = 3 
+findtime = 3600
 bantime = 1200
 ```
 
