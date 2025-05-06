@@ -1,9 +1,9 @@
 services:
   # Prosody (XMPP server)
   prosody:
-    image: jitsi/prosody:${JITSI_VERSION}
-    container_name: jitsi_prosody
-    restart: ${RESTART_POLICY}
+    image: jitsi/prosody:${JITSI_VERSION:-stable}
+    container_name: ${PROSODY_CONTAINER_NAME:-jitsi_prosody}
+    restart: ${RESTART_POLICY:-unless-stopped}
     ports:
       - "5222:5222"
       - "5347:5347"
@@ -17,9 +17,9 @@ services:
 
   # Jicofo (Focus component)
   jicofo:
-    image: jitsi/jicofo:stable
-    container_name: jitsi_jicofo
-    restart: unless-stopped
+    image: jitsi/jicofo:${JITSI_VERSION:-stable}
+    container_name: ${JICOFO_CONTAINER_NAME:-jitsi_jicofo}
+    restart: ${RESTART_POLICY:-unless-stopped}
     depends_on:
       - prosody
     volumes:
@@ -31,9 +31,9 @@ services:
 
   # JVB (Video Bridge)
   jvb:
-    image: jitsi/jvb:${JITSI_VERSION}
-    container_name: jitsi_jvb
-    restart: ${RESTART_POLICY}
+    image: jitsi/jvb:${JITSI_VERSION:-stable}
+    container_name: ${JVB_CONTAINER_NAME:-jitsi_jvb}
+    restart: ${RESTART_POLICY:-unless-stopped}
     depends_on:
       - prosody
     ports:
@@ -47,9 +47,9 @@ services:
 
   # Web (Jitsi Meet web interface)
   web:
-    image: jitsi/web:${JITSI_VERSION}
-    container_name: jitsi_web
-    restart: ${RESTART_POLICY}
+    image: jitsi/web:${JITSI_VERSION:-stable}
+    container_name: ${WEB_CONTAINER_NAME:-jitsi_web}
+    restart: ${RESTART_POLICY:-unless-stopped}
     depends_on:
       - prosody
       - jicofo
@@ -62,8 +62,8 @@ services:
     networks:
       - jitsi_network
     ports:
-      - "${HTTP_PORT}:80"
-      - "${HTTPS_PORT}:443"
+      - "${HTTP_PORT:-8000}:80"
+      - "${HTTPS_PORT:-8443}:443"
 
 networks:
   jitsi_network:

@@ -1,4 +1,27 @@
 #-----------------------------------------------------------------------
+# IMPORTANT: NEVER commit the actual .env file to version control!
+#-----------------------------------------------------------------------
+
+#-----------------------------------------------------------------------
+# DOCKER CONFIGURATION
+#-----------------------------------------------------------------------
+# Jitsi component versions (stable, latest, or specific version)
+JITSI_VERSION=stable
+
+# Container restart policy (unless-stopped, always, on-failure)
+RESTART_POLICY=unless-stopped
+
+# Optional: Custom container names
+# PROSODY_CONTAINER_NAME=jitsi_prosody
+# JICOFO_CONTAINER_NAME=jitsi_jicofo
+# JVB_CONTAINER_NAME=jitsi_jvb
+# WEB_CONTAINER_NAME=jitsi_web
+
+# Web interface ports
+HTTP_PORT=8000
+HTTPS_PORT=8443
+
+#-----------------------------------------------------------------------
 # BASIC SETUP
 #-----------------------------------------------------------------------
 # Base URL of your Jitsi instance (must match your domain)
@@ -7,15 +30,6 @@ PUBLIC_URL=https://jitsi.test.mydomain.de
 # Directory for persistent configuration storage
 CONFIG_DIR=/path/to/jitsi/config
 
-# Web interface port mappings
-HTTP_PORT=8000
-HTTPS_PORT=8443
-
-RESTART_POLICY=unless-stopped
-JITSI_VERSION=stable
-
-# Docker network name
-NETWORK=jitsi_network
 
 #-----------------------------------------------------------------------
 # XMPP CONFIGURATION
@@ -60,7 +74,7 @@ ENABLE_LETSENCRYPT=0
 
 #-----------------------------------------------------------------------
 # COMPONENT CREDENTIALS
-# IMPORTANT: Replace these with secure passwords in production!
+# IMPORTANT: Replace these with secure, random passwords in production!
 #-----------------------------------------------------------------------
 # Jicofo (conference focus) credentials
 JICOFO_COMPONENT_SECRET=YOUR_JICOFO_COMPONENT_SECRET
@@ -74,7 +88,5 @@ JVB_AUTH_PASSWORD=YOUR_SECURE_JVB_PASSWORD
 #-----------------------------------------------------------------------
 # ADDITIONAL SETTINGS
 #-----------------------------------------------------------------------
-# Uncomment and set these for production environments
-# JVB_ADVERTISE_IPS=your-server-public-ip
-# TZ=Europe/Berlin
+# In case you use load balancing
 # DOCKER_HOST_ADDRESS=your-server-public-ip
