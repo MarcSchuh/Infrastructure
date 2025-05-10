@@ -108,7 +108,6 @@ services:
     volumes:
       - ${CONFIG_DIR}/web:/config
       - ${CONFIG_DIR}/transcripts:/usr/share/jitsi-meet/transcripts
-      - ${LOG_DIR}/logs/web:/var/log/nginx
     env_file:
       - .env
     networks:
