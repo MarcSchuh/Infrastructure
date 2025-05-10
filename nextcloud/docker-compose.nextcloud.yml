@@ -34,20 +34,11 @@ services:
       driver: "loki"
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-pipeline-stages: |
-          - json:
-              expressions:
-                timestamp: time
-                level: level
-                message: message
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=nextcloud_app"
         loki-timeout: "10s"
-        loki-buffer-size: "256MB"
-        loki-queue-size: "10000"
         loki-tenant-id: "nextcloud"
-        loki-format: "json"
 
   nextcloud_db:
     image: mariadb:${MARIADB_VERSION}
@@ -79,20 +70,11 @@ services:
       driver: "loki"
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-pipeline-stages: |
-          - json:
-              expressions:
-                timestamp: time
-                level: level
-                message: message
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=nextcloud_db"
         loki-timeout: "10s"
-        loki-buffer-size: "256MB"
-        loki-queue-size: "10000"
         loki-tenant-id: "nextcloud"
-        loki-format: "json"
 
   nextcloud_cron:
     image: nextcloud:${NEXTCLOUD_VERSION:-latest}
@@ -125,20 +107,12 @@ services:
       driver: "loki"
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-pipeline-stages: |
-          - json:
-              expressions:
-                timestamp: time
-                level: level
-                message: message
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=nextcloud_cron"
         loki-timeout: "10s"
-        loki-buffer-size: "256MB"
-        loki-queue-size: "10000"
         loki-tenant-id: "nextcloud"
-        loki-format: "json"
+
 
   nextcloud_redis:
     image: redis:${REDIS_VERSION:-alpine}
@@ -160,20 +134,11 @@ services:
       driver: "loki"
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-pipeline-stages: |
-          - json:
-              expressions:
-                timestamp: time
-                level: level
-                message: message
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=nextcloud_redis"
         loki-timeout: "10s"
-        loki-buffer-size: "256MB"
-        loki-queue-size: "10000"
         loki-tenant-id: "nextcloud"
-        loki-format: "json"
 
   nextcloud_fail2ban:
     image: crazymax/fail2ban:${FAIL2BAN_VERSION:-latest}
@@ -198,20 +163,11 @@ services:
       driver: "loki"
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-pipeline-stages: |
-          - json:
-              expressions:
-                timestamp: time
-                level: level
-                message: message
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=nextcloud_fail2ban"
         loki-timeout: "10s"
-        loki-buffer-size: "256MB"
-        loki-queue-size: "10000"
         loki-tenant-id: "nextcloud"
-        loki-format: "json"
 
 
 networks:
