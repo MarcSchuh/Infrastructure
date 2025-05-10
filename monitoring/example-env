@@ -1,0 +1,25 @@
+# Monitoring Stack Versions
+PROMETHEUS_VERSION=latest
+NODE_EXPORTER_VERSION=latest
+CADVISOR_VERSION=latest
+GRAFANA_VERSION=latest
+LOKI_VERSION=latest
+PROMTAIL_VERSION=latest
+
+# Container Names
+PROMETHEUS_CONTAINER_NAME=prometheus
+NODE_EXPORTER_CONTAINER_NAME=node_exporter
+CADVISOR_CONTAINER_NAME=cadvisor
+GRAFANA_CONTAINER_NAME=grafana
+LOKI_CONTAINER_NAME=loki
+PROMTAIL_CONTAINER_NAME=promtail
+
+# Data Directories
+MONITORING_DATA_DIR=/path/to/monitoring/data
+
+# Grafana Credentials
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=secure_password_here
+
+# Restart Policy
+RESTART_POLICY=unless-stopped
