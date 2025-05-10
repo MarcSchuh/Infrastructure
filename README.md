@@ -29,6 +29,12 @@ The goal is to demonstrate Infrastructure as Code practices while providing a li
 - Docker Compose v2.33.1 or later
 - Open firewall ports (see Firewall Configuration)
 
+### Required Docker Plugins
+- Loki logging plugin (required for container logging):
+```bash
+docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+```
+
 ### Domain Configuration
 Ensure your domain's DNS settings are properly configured to point to your server's IP address.
 
@@ -594,7 +600,7 @@ docker-compose -f docker-compose.watchtower.yml ps
    - Helps maintain service availability during updates
    - Particularly useful for multi-container applications
 
-## Monitoring
+## Updating
 
 1. Check Watchtower logs:
 ```bash
@@ -701,7 +707,7 @@ ssh -p ${JUMP_PORT} YOUR_USER@your-domain.com
 ```
 
 
-## Monitoring
+# Monitoring
 
 1. Check container health:
 ```bash
