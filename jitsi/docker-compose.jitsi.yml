@@ -10,10 +10,17 @@ services:
       - "5280:5280"
     volumes:
       - ${CONFIG_DIR}/prosody:/config:Z
+      - ${LOG_DIR}/prosody:/var/log/prosody
     env_file:
       - .env
     networks:
       - jitsi_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
 
   # Jicofo (Focus component)
   jicofo:
@@ -23,11 +30,18 @@ services:
     depends_on:
       - prosody
     volumes:
-      - ${CONFIG_DIR}/jicofo:/config:Z
+      - ${CONFIG_DIR}/jicofo:/config
+      - ${LOG_DIR}/jicofo:/var/log/jicofo
     env_file:
       - .env
     networks:
       - jitsi_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
 
   # JVB (Video Bridge)
   jvb:
@@ -39,7 +53,8 @@ services:
     ports:
       - "10000:10000/udp"
     volumes:
-      - ${CONFIG_DIR}/jvb:/config:Z
+      - ${CONFIG_DIR}/jvb:/config
+      - ${LOG_DIR}/jvb:/var/log/jvb
     env_file:
       - .env
     networks:
@@ -50,6 +65,12 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
+        compress: "true"
 
   # Web (Jitsi Meet web interface)
   web:
@@ -61,8 +82,9 @@ services:
       - jicofo
       - jvb
     volumes:
-      - ${CONFIG_DIR}/web:/config:Z
-      - ${CONFIG_DIR}/transcripts:/usr/share/jitsi-meet/transcripts:Z
+      - ${CONFIG_DIR}/web:/config
+      - ${CONFIG_DIR}/transcripts:/usr/share/jitsi-meet/transcripts
+      - ${LOG_DIR}/logs/web:/var/log/nginx
     env_file:
       - .env
     networks:
@@ -76,8 +98,14 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
 
 networks:
   jitsi_network:
-    external: true
+    driver: bridge
 
