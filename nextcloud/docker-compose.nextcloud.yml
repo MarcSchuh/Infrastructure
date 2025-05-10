@@ -109,9 +109,9 @@ services:
     restart: ${RESTART_POLICY:-unless-stopped}
     volumes:
       - ${NEXTCLOUD_DATA_DIR}${NEXTCLOUD_LOG_PATH:-/html/data/nextcloud.log}:/var/log/nextcloud/nextcloud.log:ro  # Mount data dir as read-only
-      - ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d  # Your fail2ban configuration
-      - ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d  # Custom filters
-      - ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d
+      - ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d:ro  # Your fail2ban configuration
+      - ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d:ro  # Custom filters
+      - ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d:ro
     network_mode: "host"
     cap_add:
       - NET_ADMIN

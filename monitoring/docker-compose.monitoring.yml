@@ -146,9 +146,9 @@ services:
       - NET_RAW
     network_mode: "host"
     volumes:
-      - ${MONITORING_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d
-      - ${MONITORING_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d
-      - ${MONITORING_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d
+      - ${MONITORING_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d:ro
+      - ${MONITORING_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d:ro
+      - ${MONITORING_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d:ro
       - ${MONITORING_DATA_DIR}/fail2ban/db:/data/db
       - ${MONITORING_DATA_DIR}/grafana_logs:/var/log/grafana:ro
     healthcheck:
