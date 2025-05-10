@@ -23,11 +23,24 @@ services:
       - jitsi_network
       - nextcloud_network
     healthcheck:
-      test: ["CMD", "service", "nginx", "status", "||", "exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    logging:
+      driver: "loki"
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                timestamp: time
+                level: level
+                message: message
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=nginx"
 
   # ------------------------------------------------------
   # Certbot (handles Let's Encrypt certificates)
@@ -52,7 +65,19 @@ services:
       start_period: 10s
     networks:
       - proxy_network
-
+    logging:
+      driver: "loki"
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                timestamp: time
+                level: level
+                message: message
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=certbot"
 
   # Handle renew of the certificates
   certbot-renew:
@@ -80,6 +105,19 @@ services:
       start_period: 10s
     networks:
       - proxy_network
+    logging:
+      driver: "loki"
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                timestamp: time
+                level: level
+                message: message
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=certbot-renew"
 
 networks:
   proxy_network:
