@@ -100,18 +100,6 @@ Start by creating the Docker network:
 docker network create jitsi_network
 ```
 
-Comment out the SSL-part in the `nginx.conf`
-
-```text
-        listen 443 ssl;
-        listen [::]:443 ssl;
-        server_name jitsi.test.mydomain.de;
-
-        ssl_certificate /etc/letsencrypt/live/jitsi.test.mydomain.de/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/jitsi.test.mydomain.de/privkey.pem;
-```
-otherwise the nginx server will not start. 
-
 Start the nginx-server
 ```shell
 docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
@@ -128,7 +116,12 @@ docker-compose -f docker-compose.proxy.yml run --rm certbot certonly \
   --agree-tos --no-eff-email
 ```
 
-Remove the comments in the `nginx.conf` and restart the nginx-server:
+Remove the comments in the `nginx.conf`
+```text
+        ssl_certificate /etc/letsencrypt/live/jitsi.test.mydomain.de/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/jitsi.test.mydomain.de/privkey.pem;
+```
+and restart the nginx-server:
 
 ```shell
 docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
@@ -182,7 +175,15 @@ mkdir -p ${NEXTCLOUD_DATA_DIR}/redis
 mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d
 mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d
 mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/db  # For persisting the fail2ban db
 chmod -R 755 ${NEXTCLOUD_DATA_DIR}/
+```
+
+assuming the shell in the repository folder `nextcloud`, copy the following files:
+```shell
+cp nextcloud-jail.conf ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d/nextcloud.conf
+cp nextcloud-filter.conf ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d/nextcloud.conf
+cp iptables-multiport-docker.conf ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d/
 ```
 
 and ensure that `.env` is set.
@@ -231,6 +232,24 @@ When moving a nextcloud instance, do not plain copy all in `html` to the new fol
 Adapt your `config.php` with care and do not overwrite everything. 
 Especially the instance-id has to be kept as it is unique. 
 
+### Regular tasks
+
+There are a few task, that should be carried out regularly, like:
+
+```shell
+docker exec -u www-data nextcloud_app php occ app:update --all --no-interaction 
+docker exec -u www-data nextcloud_app php occ upgrade --no-interaction 
+docker exec nextcloud_app php occ db:add-missing-indices 
+docker exec nextcloud_app php occ integrity:check-core -n -v #Here you should not find any errors
+docker exec nextcloud_app php occ maintenance:repair 
+```
+
+```shell
+From time to time those can be reasonable to do:
+docker exec nextcloud_app php occ files:cleanup
+docker exec nextcloud_app php occ files:scan --all
+``` 
+
 ## Watchtower
 Watchtower keeps all docker images up-to-date if they have the tag `latest`.
 
@@ -268,3 +287,55 @@ It is reasonable to service this as systemd. Assuming, you have started this fro
 ```shell
 ssh -p ${JUMP_PORT} hook@ssh.mydomain.de
 ``` 
+
+## Logging
+As logging infrastructure a combination of loki, prometheus and grafana is chosen. 
+Additionally, a few scraper.
+
+For the next steps ensure that your `.env` is set like the `example-env`.
+
+### Creating folders
+Lets start by creating the folders:
+
+```shell
+mkdir -p ${MONITORING_DATA_DIR}/prometheus/config
+mkdir -p ${MONITORING_DATA_DIR}/prometheus/data
+mkdir -p ${MONITORING_DATA_DIR}/grafana
+mkdir -p ${MONITORING_DATA_DIR}/grafana_logs
+mkdir -p ${MONITORING_DATA_DIR}/loki/data
+mkdir -p ${MONITORING_DATA_DIR}/loki/config
+mkdir -p ${MONITORING_DATA_DIR}/promtail/config
+chmod -R 755 ${MONITORING_DATA_DIR}
+chown -R 65534:65534 ${MONITORING_DATA_DIR}/prometheus/data
+sudo `chown -R 10001:10001` ${MONITORING_DATA_DIR}/loki  #necessary as loki uses user 10001
+chown -R 1000:1000  /grafana_logs/ #necessary as grafana uses user 1000
+
+mkdir -p ${MONITORING_DATA_DIR}/fail2ban/jail.d
+mkdir -p ${MONITORING_DATA_DIR}/fail2ban/filter.d
+mkdir -p ${MONITORING_DATA_DIR}/fail2ban/action.d
+mkdir -p ${MONITORING_DATA_DIR}/fail2ban/db
+chmod -R 755 ${MONITORING_DATA_DIR}/fail2ban
+```
+
+### Copy configs
+Assuming the shell is in the repository at `/monitoring`
+```shell
+cp prometheus.yml ${MONITORING_DATA_DIR}/prometheus/config/ 
+cp loki-config.yml ${MONITORING_DATA_DIR}/loki/config/
+cp promtail-config.yml ${MONITORING_DATA_DIR}/promtail/config/
+cp promtail-config.yml ${MONITORING_DATA_DIR}/promtail/config/
+cp grafana-jail.conf ${MONITORING_DATA_DIR}/fail2ban/jail.d/grafana.conf
+cp grafana-filter.conf ${MONITORING_DATA_DIR}/fail2ban/filter.d/grafana.conf
+cp iptables-multiport-docker.conf ${MONITORING_DATA_DIR}/fail2ban/action.d/
+```
+
+### Grafana Config
+TODO!
+After logging into your grafana, you need to add a connection.
+This is prometheus, which you can find at the url http://prometheus:9090
+
+### Status fail2ban
+The status of your fail2ban can be checked via 
+```shell
+docker exec logging_fail2ban fail2ban-client status grafana
+```
