@@ -9,18 +9,29 @@ services:
       - "5347:5347"
       - "5280:5280"
     volumes:
-      - ${CONFIG_DIR}/prosody:/config:Z
-      - ${LOG_DIR}/prosody:/var/log/prosody
+      - ${CONFIG_DIR}/prosody:/config
     env_file:
       - .env
     networks:
       - jitsi_network
     logging:
-      driver: "json-file"
+      driver: "loki"
       options:
-        max-size: "100m"
-        max-file: "5"
-        compress: "true"
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                timestamp: time
+                level: level
+                message: message
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=prosody"
+        loki-timeout: "10s"
+        loki-buffer-size: "256MB"
+        loki-queue-size: "10000"
+        loki-tenant-id: "jitsi"
+        loki-format: "json"
 
   # Jicofo (Focus component)
   jicofo:
@@ -31,17 +42,28 @@ services:
       - prosody
     volumes:
       - ${CONFIG_DIR}/jicofo:/config
-      - ${LOG_DIR}/jicofo:/var/log/jicofo
     env_file:
       - .env
     networks:
       - jitsi_network
     logging:
-      driver: "json-file"
+      driver: "loki"
       options:
-        max-size: "100m"
-        max-file: "5"
-        compress: "true"
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                timestamp: time
+                level: level
+                message: message
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=jicofo"
+        loki-timeout: "10s"
+        loki-buffer-size: "256MB"
+        loki-queue-size: "10000"
+        loki-tenant-id: "jitsi"
+        loki-format: "json"
 
   # JVB (Video Bridge)
   jvb:
@@ -54,7 +76,6 @@ services:
       - "10000:10000/udp"
     volumes:
       - ${CONFIG_DIR}/jvb:/config
-      - ${LOG_DIR}/jvb:/var/log/jvb
     env_file:
       - .env
     networks:
@@ -66,11 +87,23 @@ services:
       retries: 3
       start_period: 15s
     logging:
-      driver: "json-file"
+      driver: "loki"
       options:
-        max-size: "200m"
-        max-file: "5"
-        compress: "true"
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                timestamp: time
+                level: level
+                message: message
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=jvb"
+        loki-timeout: "10s"
+        loki-buffer-size: "256MB"
+        loki-queue-size: "10000"
+        loki-tenant-id: "jitsi"
+        loki-format: "json"
 
   # Web (Jitsi Meet web interface)
   web:
@@ -99,11 +132,23 @@ services:
       retries: 3
       start_period: 30s
     logging:
-      driver: "json-file"
+      driver: "loki"
       options:
-        max-size: "100m"
-        max-file: "5"
-        compress: "true"
+        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-pipeline-stages: |
+          - json:
+              expressions:
+                timestamp: time
+                level: level
+                message: message
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=web"
+        loki-timeout: "10s"
+        loki-buffer-size: "256MB"
+        loki-queue-size: "10000"
+        loki-tenant-id: "jitsi"
+        loki-format: "json"
 
 networks:
   jitsi_network:
