@@ -1,4 +1,3 @@
-
 services:
   jumphost:
     image: linuxserver/openssh-server:${SSH_SERVER_VERSION:-latest}
@@ -17,3 +16,22 @@ services:
       - "${JUMP_PORT:-5678}:${JUMP_PORT:-5678}"
     volumes:
       - ${CONFIG_DIR}:/config
+    deploy:
+      resources:
+        limits:
+          memory: ${JUMPHOST_MEM_LIM:-512M}
+          cpus: ${JUMPHOST_CPU_LIM:-0.5}
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "${SSH_PORT:-1234}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    security_opt:
+      - no-new-privileges:true
