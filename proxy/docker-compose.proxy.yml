@@ -11,6 +11,7 @@ services:
     volumes:
       - ${DATA_DIR}/config/nginx.conf:/etc/nginx/nginx.conf:ro
       - ${DATA_DIR}/config/ssl-params.conf:/etc/nginx/ssl-params.conf:ro
+      - ${DATA_DIR}/config/security-headers.conf:/etc/nginx/security-headers.conf:ro
       - ${DATA_DIR}/config/services-config:/etc/nginx/services-config:ro
       # Make ACME challenge folder available to Certbot
       - ${DATA_DIR}/certbot-challenges:/var/www/certbot-challenges
@@ -41,6 +42,12 @@ services:
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=nginx"
+        loki-timeout: "10s"
+        loki-buffer-size: "256MB"
+        loki-queue-size: "10000"
+        loki-tenant-id: "proxy"
+        loki-format: "json"
+
 
   # ------------------------------------------------------
   # Certbot (handles Let's Encrypt certificates)
@@ -78,6 +85,12 @@ services:
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=certbot"
+        loki-timeout: "10s"
+        loki-buffer-size: "256MB"
+        loki-queue-size: "10000"
+        loki-tenant-id: "proxy"
+        loki-format: "json"
+
 
   # Handle renew of the certificates
   certbot-renew:
@@ -118,6 +131,11 @@ services:
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=certbot-renew"
+        loki-timeout: "10s"
+        loki-buffer-size: "256MB"
+        loki-queue-size: "10000"
+        loki-tenant-id: "proxy"
+        loki-format: "json"
 
 networks:
   proxy_network:
