@@ -22,7 +22,7 @@ services:
       - jitsi_network
       - nextcloud_network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health" , "||", "curl", "-f", "http://localhost:80"]
+      test: ["CMD", "service", "nginx", "status", "||", "exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -34,7 +34,7 @@ services:
   certbot:
     image: certbot/certbot:${CERTBOT_VERSION:-latest}
     container_name: ${CERTBOT_CONTAINER_NAME:-certbot_le}
-    restart: ${RESTART_POLICY:-unless-stopped}
+    restart: no
     env_file:
       - .env
     volumes:
@@ -42,6 +42,26 @@ services:
       - ${DATA_DIR}/certbot-etc:/etc/letsencrypt
       - ${DATA_DIR}/certbot-challenges:/var/www/certbot-challenges
       - ${DATA_DIR}/certbot-logs:/var/log/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD", "certbot", "certificates"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - proxy_network
+
+
+  # Handle renew of the certificates
+  certbot-renew:
+    image: certbot/certbot:${CERTBOT_VERSION:-latest}
+    container_name: ${CERTBOT_RENEW_CONTAINER_NAME:-certbot_renew}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    volumes:
+      - ${DATA_DIR}/proxy/certbot-etc:/etc/letsencrypt
+      - ${DATA_DIR}/proxy/certbot-challenges:/var/www/certbot-challenges
+      - ${DATA_DIR}/proxy/certbot-logs:/var/log/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
     entrypoint: >
       sh -c "
