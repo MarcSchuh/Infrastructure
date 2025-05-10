@@ -89,12 +89,25 @@ fail2ban-client status sshd
 ```
 Generally, it's also advisable to disable password login over SSH and only allow authentication via public key methods.
 
-# Jitsi
+# Jitsi and reverse proxy
 For this setup, the `docker-compose.jitsi.yml` and `docker-compose.proxy.yml`are important.
 Both assume that a `.env` file is present, similar to the `env-example`.
 Ensure that all paths are present and have the access setting `755`.
 
 Start by creating the Docker network:
+
+# create dirs
+```shell
+mkdir -p ${DATA_DIR}/proxy 
+mkdir -p ${DATA_DIR}/config 
+mkdir -p ${DATA_DIR}/config/services-config 
+mkdir -p ${DATA_DIR}/certbot-challenges 
+mkdir -p ${DATA_DIR}/certbot-etc 
+mkdir -p ${DATA_DIR}/certbot-logs 
+cp ./nginx.conf ${DATA_DIR}/config
+cp ./ssl-params.conf ${DATA_DIR}/config
+cp ./jitsi.conf ${DATA_DIR}/config/services-config
+```
 
 ```shell
 docker network create jitsi_network
@@ -102,10 +115,24 @@ docker network create jitsi_network
 
 Start the nginx-server
 ```shell
-docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
+docker-compose -f docker-compose.proxy.yml up -d
 ```
 
-## Certificate
+## Jitsi
+Before starting your Jitsi, ensure that all passwords are set to proper values.
+
+Start your Jitsi via
+```shell
+docker-compose -f docker-compose.jitsi.yml up -d 
+```
+
+Enable in `include /etc/nginx/services-config/jitsi.conf;` in your `nginx.conf`
+Restart your proxy
+```shell
+docker restart nginx_reverse_proxy
+```
+
+### Certificate
 Get a certificate for your domain via:
 
 ```shell
@@ -116,7 +143,7 @@ docker-compose -f docker-compose.proxy.yml run --rm certbot certonly \
   --agree-tos --no-eff-email
 ```
 
-Remove the comments in the `nginx.conf`
+Remove the comments in the `jitsi.conf`
 ```text
         ssl_certificate /etc/letsencrypt/live/jitsi.test.mydomain.de/fullchain.pem;
         ssl_certificate_key /etc/letsencrypt/live/jitsi.test.mydomain.de/privkey.pem;
@@ -124,22 +151,17 @@ Remove the comments in the `nginx.conf`
 and restart the nginx-server:
 
 ```shell
-docker-compose -f docker-compose.proxy.yml up -d --force-recreate --build
+docker restart nginx_reverse_proxy
 ```
 
-## Jitsi user
-Before starting your Jitsi, ensure that all passwords are set to proper values.
-Start your Jitsi via
-```shell
-docker-compose -f docker-compose.jitsi.yml up -d --force-recreate --build
-```
-
+### Users
 Add users via
 ```shell
 docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register my_user jitsi.mydomain.de SuperSecretPassword
 ```
 
 and with that your Jitsi should be up and running
+
 
 ## WordPress
 Create the necessary folders for WordPress:
