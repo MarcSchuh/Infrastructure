@@ -90,20 +90,11 @@ services:
       driver: "loki"
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-pipeline-stages: |
-          - json:
-              expressions:
-                timestamp: time
-                level: level
-                message: message
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=jvb"
         loki-timeout: "10s"
-        loki-buffer-size: "256MB"
-        loki-queue-size: "10000"
         loki-tenant-id: "jitsi"
-        loki-format: "json"
 
   # Web (Jitsi Meet web interface)
   web:
