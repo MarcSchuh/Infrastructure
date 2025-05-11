@@ -37,4 +37,6 @@ services:
 networks:
   boinc_network:
     driver: bridge
+  monitoring_network:
+    external: true
 
