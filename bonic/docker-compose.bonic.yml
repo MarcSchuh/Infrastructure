@@ -24,15 +24,6 @@ services:
       - BOINC_PROJECT_KEYS=${BOINC_PROJECT_KEYS}
       - BOINC_USERNAME=${BOINC_USERNAME:-anonymous}
       - BOINC_EMAIL=${BOINC_EMAIL:-anonymous@example.com}
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=boinc"
-        loki-timeout: "10s"
-        loki-tenant-id: "boinc"
 
 networks:
   boinc_network:
