@@ -30,15 +30,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=wordpress"
-        loki-timeout: "10s"
-        loki-tenant-id: "wordpress"
 
   # MariaDB container
   wordpress_db:
@@ -67,15 +58,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=wordpress_db"
-        loki-timeout: "10s"
-        loki-tenant-id: "wordpress"
 
 networks:
   wordpress_network:

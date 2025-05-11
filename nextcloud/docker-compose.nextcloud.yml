@@ -159,16 +159,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=nextcloud_fail2ban"
-        loki-timeout: "10s"
-        loki-tenant-id: "nextcloud"
-
 
 networks:
   nextcloud_network:
