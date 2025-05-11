@@ -1,66 +1,78 @@
 # Infrastructure Repository
 
-## General remarks
-Please be aware, that this repository is in the beta status. 
-Especially the nginx-example is not in a state, where it can be rolled out as is, because the SSL-part depends on certificates that can only be created, if the http-part is enabled.
-It is recommended to first disable all SSL-parts in the nginx config, carry out the necessary certificate creation steps and then enable it again.
+This repository serves as an infrastructure example for using Docker Compose to deploy services such as Jitsi, WordPress, and Nextcloud. 
+It aims to provide a lightweight introduction to these tools and demonstrate the benefits of Infrastructure as Code.
 
-## Introduction
-This repository serves as an infrastructure example for using Docker Compose to deploy services such as Jitsi, WordPress, and Nextcloud. It aims to provide a lightweight introduction to these tools and demonstrate the benefits of Infrastructure as Code.
+## Status
+⚠️ **Beta Status** ⚠️
+
+This repository is currently in beta status. Please note the following important considerations:
+- The nginx-example configuration requires special attention for SSL setup
+- SSL configuration depends on certificates that can only be created after enabling HTTP
+- Recommended approach: Create certificates → Enable SSL
+
+## Overview
+This repository provides a comprehensive infrastructure setup using Docker Compose to deploy various services including:
+- Jitsi (Video Conferencing)
+- WordPress (Content Management)
+- Nextcloud (File Sharing & Collaboration)
+- Monitoring Stack (Loki, Prometheus, Grafana)
+- Additional utilities (Watchtower, Jumphost)
+
+The goal is to demonstrate Infrastructure as Code practices while providing a lightweight, maintainable solution for self-hosted services.
 
 ## Prerequisites
-The following requirements should be met:
-- A Linux server (currently tested with Ubuntu 24.04)
-- An internet domain
-- Control over DNS settings
-- Docker Compose (v2.33.1 or later)
-- Open ports on your firewall (see Firewall Configuration section)
 
-Ensure that the website where the services should be accessible is properly configured in your domain management.
+### System Requirements
+- Linux server (tested with Ubuntu 24.04)
+- Internet domain with DNS control
+- Docker Compose v2.33.1 or later
+- Open firewall ports (see Firewall Configuration)
 
-## Docker
-Install Docker using:
+### Required Docker Plugins
+- Loki logging plugin (required for container logging):
+```bash
+docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+```
 
-```shell
+### Domain Configuration
+Ensure your domain's DNS settings are properly configured to point to your server's IP address.
+
+## Installation
+
+### Docker Setup
+1. Install Docker and Docker Compose:
+```bash
 sudo apt install docker docker-compose
 ```
 
-Enable your user to run Docker without sudo:
-
-```shell
+2. Add your user to the docker group (to run Docker without sudo):
+```bash
 sudo usermod -aG docker $USER
 ```
 
-## Firewall
-Make sure the firewall is up and properly configured:
-
-```shell
+### Firewall Configuration
+1. Install and configure UFW:
+```bash
 sudo apt install ufw
-```
-
-Configure the necessary ports:
-
-```shell
 sudo ufw allow 22/tcp
 sudo ufw enable
 ```
 
-Check the firewall status:
-
-```shell
+2. Verify firewall status:
+```bash
 sudo ufw status
 ```
 
-### File2ban
-Optional but highly recommended:
-
-```shell
+### Fail2ban Setup (Recommended)
+1. Install fail2ban:
+```bash
 sudo apt install fail2ban
 sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
 ```
 
-The default settings in  ```/etc/fail2ban/jail.local``` are fine, but I recommend:
-```text
+2. Configure fail2ban (edit `/etc/fail2ban/jail.local`):
+```ini
 [sshd]
 enabled = true 
 port    = ssh
@@ -72,70 +84,102 @@ findtime = 3600
 bantime = 1200
 ```
 
-Enable und starte `fail2ban` neu
-```shell
+3. Enable and start fail2ban:
+```bash
 sudo systemctl enable fail2ban 
 sudo systemctl start fail2ban
 ```
 
-Verify that `fail2ban` is running:
-```shell
+4. Verify fail2ban status:
+```bash
 systemctl status fail2ban
-```
-
-And check if bans are occurring:
-```shell
 fail2ban-client status sshd
 ```
-Generally, it's also advisable to disable password login over SSH and only allow authentication via public key methods.
 
-# Jitsi and reverse proxy
-For this setup, the `docker-compose.jitsi.yml` and `docker-compose.proxy.yml`are important.
-Both assume that a `.env` file is present, similar to the `env-example`.
-Ensure that all paths are present and have the access setting `755`.
+> **Security Note**: It's highly recommended to disable password authentication for SSH and use only public key authentication.
 
-Start by creating the Docker network:
+# Jitsi and Reverse Proxy Setup
 
-# create dirs
-```shell
+This section describes how to set up Jitsi Meet with a reverse proxy for secure access. The setup consists of two main components:
+1. Nginx reverse proxy with SSL termination
+2. Jitsi Meet stack (Prosody, Jicofo, JVB, and Web interface)
+
+## Prerequisites
+- Docker and Docker Compose installed
+- A domain name pointing to your server
+- Ports 80 and 443 available on your server
+- Environment variables configured (see `env.example` files in both `proxy` and `jitsi` directories)
+
+## Directory Structure Setup
+
+1. Create required directories:
+```bash
 mkdir -p ${DATA_DIR}/proxy 
 mkdir -p ${DATA_DIR}/config 
 mkdir -p ${DATA_DIR}/config/services-config 
 mkdir -p ${DATA_DIR}/certbot-challenges 
 mkdir -p ${DATA_DIR}/certbot-etc 
 mkdir -p ${DATA_DIR}/certbot-logs 
+```
+
+2. Copy configuration files:
+```bash
 cp ./nginx.conf ${DATA_DIR}/config
 cp ./ssl-params.conf ${DATA_DIR}/config
+cp ./security-headers.conf ${DATA_DIR}/config
 cp ./jitsi.conf ${DATA_DIR}/config/services-config
 ```
 
-```shell
+3. Set proper permissions:
+```bash
+chmod -R 755 ${DATA_DIR}
+```
+
+4. Jitsi requires an external network:
+```bash
 docker network create jitsi_network
 ```
 
-Start the nginx-server
-```shell
+## Setup Order
+
+The services should be started in the following order:
+1. Start Jitsi services first (this will create the required network)
+2. Then start the reverse proxy (which will connect to the existing network)
+
+## Reverse Proxy Setup
+
+1. Start the Nginx reverse proxy:
+```bash
 docker-compose -f docker-compose.proxy.yml up -d
 ```
 
-## Jitsi
-Before starting your Jitsi, ensure that all passwords are set to proper values.
+2. Enable Jitsi configuration in Nginx:
+   - Edit `${DATA_DIR}/config/nginx.conf`
+   - Uncomment or add: `include /etc/nginx/services-config/jitsi.conf;`
 
-Start your Jitsi via
-```shell
-docker-compose -f docker-compose.jitsi.yml up -d 
-```
-
-Enable in `include /etc/nginx/services-config/jitsi.conf;` in your `nginx.conf`
-Restart your proxy
-```shell
+3. Restart the proxy to apply changes:
+```bash
 docker restart nginx_reverse_proxy
 ```
 
-### Certificate
-Get a certificate for your domain via:
+## Jitsi Setup
 
-```shell
+1. Configure environment variables:
+   - Copy `jitsi/env.example` to `jitsi/.env`
+   - Update the values, especially:
+     - `PUBLIC_URL`: Your domain name
+     - `ENABLE_GUESTS`: Set to 1 to allow guest access
+     - `JVB_AUTH_USER` and `JVB_AUTH_PASSWORD`: For JVB authentication
+
+2. Start Jitsi services:
+```bash
+docker-compose -f docker-compose.jitsi.yml up -d
+```
+
+## SSL Certificate Setup
+
+1. Obtain SSL certificate:
+```bash
 docker-compose -f docker-compose.proxy.yml run --rm certbot certonly \
   --webroot -w /var/www/certbot-challenges \
   -d jitsi.example.com \
@@ -143,149 +187,478 @@ docker-compose -f docker-compose.proxy.yml run --rm certbot certonly \
   --agree-tos --no-eff-email
 ```
 
-Remove the comments in the `jitsi.conf`
-```text
-        ssl_certificate /etc/letsencrypt/live/jitsi.test.mydomain.de/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/jitsi.test.mydomain.de/privkey.pem;
+2. Enable SSL in Jitsi configuration:
+   - Edit `${DATA_DIR}/config/services-config/jitsi.conf`
+   - Uncomment and update SSL certificate paths:
+```nginx
+ssl_certificate /etc/letsencrypt/live/jitsi.example.com/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/jitsi.example.com/privkey.pem;
 ```
-and restart the nginx-server:
 
-```shell
+3. Restart the proxy:
+```bash
 docker restart nginx_reverse_proxy
 ```
 
-### Users
-Add users via
-```shell
-docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register my_user jitsi.mydomain.de SuperSecretPassword
+## User Management
+
+To add users to Jitsi:
+```bash
+docker exec -it jitsi_prosody prosodyctl --config /config/prosody.cfg.lua register username jitsi.example.com password
 ```
 
-and with that your Jitsi should be up and running
+## Verification
 
+1. Check service status:
+```bash
+docker-compose -f docker-compose.jitsi.yml ps
+docker-compose -f docker-compose.proxy.yml ps
+```
 
-## WordPress
-Create the necessary folders for WordPress:
+2. Test the setup:
+   - Visit `https://jitsi.example.com`
+   - Create a new meeting
+   - Test audio/video functionality
+   - Verify SSL certificate
 
-```shell
+## Troubleshooting
+
+1. Check logs:
+```bash
+docker-compose -f docker-compose.jitsi.yml logs
+docker-compose -f docker-compose.proxy.yml logs
+```
+
+2. Common issues:
+   - If SSL doesn't work, ensure ports 80 and 443 are open
+   - If meetings don't connect, check JVB logs
+   - If authentication fails, verify Prosody configuration
+
+# WordPress Setup
+
+This section describes how to set up WordPress with MariaDB using Docker Compose. The setup includes:
+- WordPress application container
+- MariaDB database container
+- Integration with the reverse proxy
+- Resource limits and health monitoring
+
+## Prerequisites
+- Docker and Docker Compose installed
+- Reverse proxy configured (see previous sections)
+- Environment variables configured (see `wordpress/env.example`)
+
+## Directory Structure Setup
+
+1. Create required directories:
+```bash
 mkdir -p ${DATA_DIR}/wordpress/html
 mkdir -p ${DATA_DIR}/wordpress/db
 chmod -R 755 ${DATA_DIR}/wordpress
 ```
 
-ensure that your `.env` file is readily configured. 
-Start your WordPress containers via
+## Configuration
 
-```shell
+1. Set up environment variables:
+   - Copy `wordpress/env.example` to `wordpress/.env`
+   - Update the following values:
+     - `DB_NAME`: Your WordPress database name
+     - `DB_USER`: Database user
+     - `DB_PASSWORD`: Secure database password
+     - `ROOT_PASSWORD`: Secure MariaDB root password
+     - `WP_TABLE_PREFIX`: Optional table prefix (default: wp_)
+     - Resource limits (optional):
+       - `WORDPRESS_MEM_LIM`: Memory limit for WordPress (default: 1G)
+       - `WORDPRESS_CPU_LIM`: CPU limit for WordPress (default: 0.5)
+       - `WORDPRESS_DB_MEM_LIM`: Memory limit for database (default: 2G)
+       - `WORDPRESS_DB_CPU_LIM`: CPU limit for database (default: 0.5)
+
+## Deployment
+
+1. Start WordPress services:
+```bash
 docker-compose -f docker-compose.wordpress.yml up -d
 ```
-disable the SSL-part in the nginx.config and get the certificates:
-```shell
-docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w /var/www/certbot-challenges -d wordpress.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
+
+2. Verify the deployment:
+```bash
+docker-compose -f docker-compose.wordpress.yml ps
 ```
 
-enable the SSL-parts again. 
-The certbot will automatically take care of this certificate, too. 
+## SSL Configuration
 
+1. Obtain SSL certificate:
+```bash
+docker-compose -f docker-compose.proxy.yml run certbot certonly -v \
+  --webroot -w /var/www/certbot-challenges \
+  -d wordpress.example.com \
+  --email your-email@example.com \
+  --agree-tos --no-eff-email
+```
 
-## Nextcloud
+2. Enable SSL in WordPress configuration:
+   - Edit `${DATA_DIR}/config/services-config/wordpress.conf`
+   - Uncomment and update SSL certificate paths:
+```nginx
+ssl_certificate /etc/letsencrypt/live/wordpress.example.com/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/wordpress.example.com/privkey.pem;
+```
 
-Create necessary dirs
-```shell
+3. Restart the proxy:
+```bash
+docker restart nginx_reverse_proxy
+```
+
+## Initial Setup
+
+1. Access WordPress:
+   - Visit `https://wordpress.example.com`
+   - Follow the WordPress installation wizard
+   - Choose your language
+   - Create an admin account
+   - Complete the installation
+
+2. Post-installation:
+   - Install and configure essential plugins
+   - Set up your theme
+   - Configure permalinks
+
+> **Note**: WordPress and MariaDB containers will be automatically updated by Watchtower when new versions are available. No manual update is required.
+
+## Maintenance
+
+1. Database backup:
+```bash
+docker exec wordpress_db mariadb -u root -p${ROOT_PASSWORD} ${DB_NAME} > backup.sql
+```
+
+2. Restore from backup:
+```bash
+docker exec -i wordpress_db mariadb -u root -p${ROOT_PASSWORD} ${DB_NAME} < backup.sql
+```
+
+## Troubleshooting
+
+1. Check container logs:
+```bash
+docker-compose -f docker-compose.wordpress.yml logs
+```
+
+2. Common issues:
+   - If WordPress can't connect to the database, verify environment variables
+   - If SSL doesn't work, check certificate paths and permissions
+   - If updates fail, check disk space and permissions
+
+# Nextcloud Setup
+
+This section describes how to set up Nextcloud with MariaDB, Redis, and fail2ban using Docker Compose. The setup includes:
+- Nextcloud application container
+- MariaDB database container
+- Redis for caching
+- Cron job container for background tasks
+- fail2ban for security
+- Integration with the reverse proxy
+
+## Prerequisites
+- Docker and Docker Compose installed
+- Reverse proxy configured (see previous sections)
+- Environment variables configured (see `nextcloud/env.example`)
+- Watchtower installed (for automatic updates)
+
+## Directory Structure Setup
+
+1. Create required directories:
+```bash
 mkdir -p ${NEXTCLOUD_DATA_DIR}/app
 mkdir -p ${NEXTCLOUD_DATA_DIR}/db
 mkdir -p ${NEXTCLOUD_DATA_DIR}/redis
 mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d
 mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d
 mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d
-mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/db  # For persisting the fail2ban db
-chmod -R 755 ${NEXTCLOUD_DATA_DIR}/
+mkdir -p ${NEXTCLOUD_DATA_DIR}/fail2ban/db
+chmod -R 755 ${NEXTCLOUD_DATA_DIR}
 ```
 
-assuming the shell in the repository folder `nextcloud`, copy the following files:
-```shell
+2. Copy fail2ban configuration files:
+```bash
 cp nextcloud-jail.conf ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d/nextcloud.conf
 cp nextcloud-filter.conf ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d/nextcloud.conf
 cp iptables-multiport-docker.conf ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d/
 ```
 
-and ensure that `.env` is set.
+## Configuration
 
-Start your nextcloud again via:
-```shell
+1. Set up environment variables:
+   - Copy `nextcloud/env.example` to `nextcloud/.env`
+   - Update the following values:
+     - `NEXTCLOUD_VERSION`: Nextcloud version (default: latest)
+     - `DB_NAME`: Database name
+     - `DB_USER`: Database user
+     - `DB_PASSWORD`: Secure database password
+     - `ROOT_PASSWORD`: Secure MariaDB root password
+     - `REDIS_PASSWORD`: Secure Redis password
+     - `PHP_UPLOAD_LIMIT`: Maximum upload size (default: 10G)
+     - `TIMEZONE`: Your timezone
+     - `PUID` and `PGID`: User/Group IDs for file permissions
+
+## Deployment
+
+1. Start Nextcloud services:
+```bash
 docker-compose -f docker-compose.nextcloud.yml up -d
 ```
-disable the SSL-part in the nginx.config and get the certificates:
-```shell
-docker-compose -f docker-compose.proxy.yml run certbot certonly -v --webroot -w /var/www/certbot-challenges -d nextcloud.mydomain.de --email your-letsencrypttest@mydomain.de --agree-tos --no-eff-email
+
+2. Verify the deployment:
+```bash
+docker-compose -f docker-compose.nextcloud.yml ps
 ```
 
-Copy the `filter.d`, `action.d` and `jail.d` to the corresponding folders and name them each `nextcloud.conf`
+## SSL Configuration
 
-### Useful commands
-Sometimes nextcloud need a bit of help.
-To import an existing database, use:
-```shell
-docker cp  /pat/to/nextcloud/backup.sql nextcloud_db:/tmp/
-docker exec -it nextcloud_db bash -c "mariadb -u root -p"YourRootPassword" nextcloud < /tmp/backup.sql"
+1. Obtain SSL certificate:
+```bash
+docker-compose -f docker-compose.proxy.yml run certbot certonly -v \
+  --webroot -w /var/www/certbot-challenges \
+  -d nextcloud.example.com \
+  --email your-email@example.com \
+  --agree-tos --no-eff-email
 ```
 
-Messing with the database can be done via:
-```shell
-docker exec -it nextcloud_db bash -c "mariadb -u root -p'YourRootPassword' -e \"ALTER DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;\""
-docker exec -it nextcloud_db bash -c "mariadb -u root -p'YourRootPassword' -e \"GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextclouduser'@'%';\""
+2. Enable SSL in Nextcloud configuration:
+   - Edit `${DATA_DIR}/config/services-config/nextcloud.conf`
+   - Uncomment and update SSL certificate paths:
+```nginx
+ssl_certificate /etc/letsencrypt/live/nextcloud.example.com/fullchain.pem;
+ssl_certificate_key /etc/letsencrypt/live/nextcloud.example.com/privkey.pem;
 ```
 
-And to play a bit with the nextcloud itself, use
-
-```shell
-docker exec -u www-data -it nextcloud_app php occ maintenance:mode --on
-docker exec -u www-data -it nextcloud_app php occ maintenance:repair
+3. Restart the proxy:
+```bash
+docker restart nginx_reverse_proxy
 ```
 
-unbanning in fail2ban
-```shell
-docker exec nextcloud_fail2ban fail2ban-client status nextcloud
-docker exec nextcloud_fail2ban fail2ban-client set nextcloud unbanip 192.168.1.100
+## Initial Setup
+
+1. Access Nextcloud:
+   - Visit `https://nextcloud.example.com`
+   - Create an admin account
+   - Complete the initial setup
+
+2. Post-installation:
+   - Configure trusted domains
+   - Set up email server
+   - Configure background jobs
+   - Install recommended apps
+
+> **Note**: Nextcloud containers will be automatically updated by Watchtower when new versions are available. No manual update is required.
+
+## Maintenance
+
+1. Nextcloud Updates:
+   > **Note**: While Watchtower handles container updates, Nextcloud apps and core updates need to be managed separately.
+
+   ```bash
+   # Update all Nextcloud apps
+   docker exec -u www-data nextcloud_app php occ app:update --all --no-interaction
+
+   # Update Nextcloud core (if not using 'latest' tag)
+   docker exec -u www-data nextcloud_app php occ upgrade --no-interaction
+   ```
+
+2. Database maintenance:
+```bash
+# Add missing indices
+docker exec nextcloud_app php occ db:add-missing-indices
+
+# Check database integrity
+docker exec nextcloud_app php occ integrity:check-core -n -v
+
+# Repair if needed
+docker exec nextcloud_app php occ maintenance:repair
 ```
 
-
-### Observation
-When moving a nextcloud instance, do not plain copy all in `html` to the new folder but instead only copy the content of `data`, `apps` and `themes`.
-Adapt your `config.php` with care and do not overwrite everything. 
-Especially the instance-id has to be kept as it is unique. 
-
-### Regular tasks
-
-There are a few task, that should be carried out regularly, like:
-
-```shell
-docker exec -u www-data nextcloud_app php occ app:update --all --no-interaction 
-docker exec -u www-data nextcloud_app php occ upgrade --no-interaction 
-docker exec nextcloud_app php occ db:add-missing-indices 
-docker exec nextcloud_app php occ integrity:check-core -n -v #Here you should not find any errors
-docker exec nextcloud_app php occ maintenance:repair 
-```
-
-```shell
-From time to time those can be reasonable to do:
+3. File system maintenance:
+```bash
+# Clean up file cache
 docker exec nextcloud_app php occ files:cleanup
+
+# Scan for new files
 docker exec nextcloud_app php occ files:scan --all
 ``` 
 
-## Watchtower
-Watchtower keeps all docker images up-to-date if they have the tag `latest`.
+4. Database backup:
+```bash
+# Enable maintenance mode
+docker exec -u www-data nextcloud_app php occ maintenance:mode --on
 
-## Jumphost
-I have a small computer at home, which I cannot reach directly from outside. 
-Therefor I installed a jumphost.
+# Create database backup
+docker exec nextcloud_db mariadb -u root -p${ROOT_PASSWORD} ${DB_NAME} > backup.sql
 
-Create directory to edit config:
-```shell
-mkdir -p ${CONFIG_DIR}
+# Disable maintenance mode
+docker exec -u www-data nextcloud_app php occ maintenance:mode --off
 ```
 
-Start docker, then edit in `${CONFIG_DIR}/sshd/sshd_config` and add
+5. Restore from backup:
+```bash
+docker exec -i nextcloud_db mariadb -u root -p${ROOT_PASSWORD} ${DB_NAME} < backup.sql
 ```
+
+## Security
+
+1. Check fail2ban status:
+```bash
+docker exec nextcloud_fail2ban fail2ban-client status nextcloud
+```
+
+2. Unban an IP if needed:
+```bash
+docker exec nextcloud_fail2ban fail2ban-client set nextcloud unbanip IP_ADDRESS
+```
+
+## Troubleshooting
+
+1. Check container logs:
+```bash
+docker-compose -f docker-compose.nextcloud.yml logs
+```
+
+2. Common issues:
+   - If Nextcloud can't connect to the database, verify environment variables
+   - If SSL doesn't work, check certificate paths and permissions
+   - If background jobs fail, check cron container logs
+   - If Redis connection fails, verify Redis password
+   - If database access fails, ensure proper permissions:
+     ```bash
+     # Grant all privileges to the Nextcloud user
+     docker exec nextcloud_db mariadb -u root -p${ROOT_PASSWORD} -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'%';"
+     docker exec nextcloud_db mariadb -u root -p${ROOT_PASSWORD} -e "FLUSH PRIVILEGES;"
+     ```
+
+## Migration Notes
+
+When moving a Nextcloud instance:
+1. Only copy the following directories:
+   - `data/`
+   - `apps/`
+   - `themes/`
+2. Preserve the `config.php` file
+3. Keep the original `instance-id` as it is unique
+4. Update domain and database settings in `config.php`
+
+# Watchtower Setup
+
+Watchtower automatically updates your Docker containers when new versions are available. It's particularly useful for keeping your services up-to-date with security patches and new features.
+
+## Features
+- Automatic container updates
+- Configurable update schedule
+- Rolling restarts to minimize downtime
+- Automatic cleanup of old images
+- Logging integration with Loki
+
+## Prerequisites
+- Docker and Docker Compose installed
+- Docker socket accessible
+- Environment variables configured (see `watchtower/env.example`)
+
+## Configuration
+
+1. Set up environment variables:
+   - Copy `watchtower/env.example` to `watchtower/.env`
+   - Configure the following values:
+     - `WATCHTOWER_VERSION`: Watchtower version (default: latest)
+     - `RESTART_POLICY`: Container restart policy (default: unless-stopped)
+     - `SCHEDULE`: Cron expression for update checks (default: 0 0 5 * * *)
+     - `TIMEZONE`: Your timezone (default: Europe/Berlin)
+     - `WATCHTOWER_CLEANUP`: Remove old images (default: true)
+     - `WATCHTOWER_ROLLING_RESTART`: Enable rolling restarts (default: true)
+
+## Deployment
+
+1. Start Watchtower:
+```bash
+docker-compose -f docker-compose.watchtower.yml up -d
+```
+
+2. Verify the deployment:
+```bash
+docker-compose -f docker-compose.watchtower.yml ps
+```
+
+## How It Works
+
+1. **Update Process**:
+   - Watchtower checks for new images at the scheduled time
+   - If updates are found, it pulls the new images
+   - Stops the old containers
+   - Starts new containers with the same configuration
+   - Removes old images if cleanup is enabled
+
+2. **Container Selection**:
+   - Watchtower updates all running containers by default
+   - Containers with specific version tags (e.g., `stable`, `v1.0.0`) are also updated
+   - To prevent updates, add the `--no-update` label to containers
+   - To prevent restarts, add the `--no-restart` label to containers
+   - Stopped containers are not updated
+
+3. **Rolling Restarts**:
+   - When enabled, containers are updated one at a time
+   - Helps maintain service availability during updates
+   - Particularly useful for multi-container applications
+
+## Updating
+
+1. Check Watchtower logs:
+```bash
+docker-compose -f docker-compose.watchtower.yml logs
+```
+
+2. View update history:
+```bash
+docker logs watchtower
+```
+
+## Troubleshooting
+
+1. Common issues:
+   - If updates aren't happening, check the schedule
+   - If containers aren't being updated, verify they use the `latest` tag
+   - If cleanup isn't working, check disk space
+   - If rolling restarts fail, check container dependencies
+
+2. Manual update trigger:
+```bash
+docker exec watchtower watchtower --run-once
+```
+
+# Jumphost Setup
+
+A jumphost provides secure access to devices that are not directly reachable from the internet.
+
+## Features
+- Secure SSH tunneling
+- Key-based authentication only
+
+## Prerequisites
+- Docker and Docker Compose
+- Public domain name
+- SSH key pair
+
+## Setup
+
+1. Configure environment:
+```bash
+cp jumphost/env.example jumphost/.env
+# Edit .env with your settings
+```
+
+2. Create directories and config:
+```bash
+mkdir -p ${CONFIG_DIR}/sshd ${CONFIG_DIR}/.ssh
+chmod 700 ${CONFIG_DIR}/.ssh
+```
+
+3. Create `${CONFIG_DIR}/sshd/sshd_config`:
+```ini
 GatewayPorts yes
 PermitRootLogin no
 PasswordAuthentication no
@@ -296,68 +669,126 @@ PermitTunnel yes
 PermitTTY no
 ForceCommand echo 'This account is restricted to SSH forwarding only.'
 ```
-These settings ensure that the jumphost can only be used as jumphost.
 
-And, add at `${CONFIG_DIR}/.ssh/authorized_keys` your public key of the device you want to reach.
-
-On the computer you want to reach, you can start the tunnel via: 
-```shell
-/usr/bin/ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -N -R ${JUMP_PORT}:localhost:22 jumphost@ssh.mydomain.de -p ${SSH_PORT}
+4. Add your public key:
+```bash
+# Add your key to ${CONFIG_DIR}/.ssh/authorized_keys
+chmod 600 ${CONFIG_DIR}/.ssh/authorized_keys
 ```
-It is reasonable to service this as systemd. Assuming, you have started this from an account named `hook`, you can then reach your computer at home via
 
-```shell
-ssh -p ${JUMP_PORT} hook@ssh.mydomain.de
-``` 
+5. Start jumphost:
+```bash
+docker-compose -f docker-compose.jumphost.yml up -d
+```
 
-## Logging
-As logging infrastructure a combination of loki, prometheus and grafana is chosen. 
-Additionally, a few scraper.
+## Client Setup
 
-For the next steps ensure that your `.env` is set like the `example-env`.
+1. Create systemd service `/etc/systemd/system/ssh-tunnel.service`:
+```ini
+[Unit]
+Description=SSH Tunnel to Jumphost
+After=network.target
 
-### Creating folders
-Lets start by creating the folders:
+[Service]
+Type=simple
+User=YOUR_USER
+ExecStart=/usr/bin/ssh -o ServerAliveInterval=60 -o ServerAliveCountMax=3 -N -R ${JUMP_PORT}:localhost:22 ${JUMPHOST_USER}@your-domain.com -p ${SSH_PORT}
+Restart=always
 
-```shell
-mkdir -p ${MONITORING_DATA_DIR}/prometheus/config
-mkdir -p ${MONITORING_DATA_DIR}/prometheus/data
-mkdir -p ${MONITORING_DATA_DIR}/grafana
-mkdir -p ${MONITORING_DATA_DIR}/grafana_logs
-mkdir -p ${MONITORING_DATA_DIR}/loki/data
-mkdir -p ${MONITORING_DATA_DIR}/loki/config
-mkdir -p ${MONITORING_DATA_DIR}/promtail/config
+[Install]
+WantedBy=multi-user.target
+```
+
+2. Enable service:
+```bash
+sudo systemctl enable --now ssh-tunnel
+```
+
+## Usage
+
+Access remote device:
+```bash
+ssh -p ${JUMP_PORT} YOUR_USER@your-domain.com
+```
+
+
+# Monitoring
+
+1. Check container health:
+```bash
+docker-compose -f docker-compose.jumphost.yml ps
+```
+
+2. View logs:
+```bash
+docker-compose -f docker-compose.jumphost.yml logs
+```
+
+## Troubleshooting
+
+1. Common issues:
+   - If tunnel fails, check SSH service on remote device
+   - If connection drops, verify ServerAlive settings
+   - If access denied, check authorized_keys permissions
+   - If port conflicts, verify port availability
+
+2. Connection testing:
+```bash
+# Test SSH connection
+ssh -p ${SSH_PORT} hook@your-domain.com
+
+# Test tunnel port
+nc -zv your-domain.com ${JUMP_PORT}
+```
+
+## Monitoring
+
+Stack components:
+- Loki: Log aggregation and storage
+- Prometheus: Metrics collection and storage
+- Grafana: Visualization and dashboards
+- Promtail: Log shipping to Loki
+- fail2ban: Security monitoring
+
+### Setup
+
+1. Create directories:
+```bash
+mkdir -p ${MONITORING_DATA_DIR}/{prometheus/{config,data},grafana,grafana_logs,loki/{data,config},promtail/config,fail2ban/{jail.d,filter.d,action.d,db}}
 chmod -R 755 ${MONITORING_DATA_DIR}
 chown -R 65534:65534 ${MONITORING_DATA_DIR}/prometheus/data
-sudo `chown -R 10001:10001` ${MONITORING_DATA_DIR}/loki  #necessary as loki uses user 10001
-chown -R 1000:1000  /grafana_logs/ #necessary as grafana uses user 1000
-
-mkdir -p ${MONITORING_DATA_DIR}/fail2ban/jail.d
-mkdir -p ${MONITORING_DATA_DIR}/fail2ban/filter.d
-mkdir -p ${MONITORING_DATA_DIR}/fail2ban/action.d
-mkdir -p ${MONITORING_DATA_DIR}/fail2ban/db
-chmod -R 755 ${MONITORING_DATA_DIR}/fail2ban
+chown -R 10001:10001 ${MONITORING_DATA_DIR}/loki
+chown -R 1000:1000 ${MONITORING_DATA_DIR}/grafana_logs
 ```
 
-### Copy configs
-Assuming the shell is in the repository at `/monitoring`
-```shell
-cp prometheus.yml ${MONITORING_DATA_DIR}/prometheus/config/ 
+2. Copy configs:
+```bash
+cp prometheus.yml ${MONITORING_DATA_DIR}/prometheus/config/
 cp loki-config.yml ${MONITORING_DATA_DIR}/loki/config/
 cp promtail-config.yml ${MONITORING_DATA_DIR}/promtail/config/
-cp promtail-config.yml ${MONITORING_DATA_DIR}/promtail/config/
-cp grafana-jail.conf ${MONITORING_DATA_DIR}/fail2ban/jail.d/grafana.conf
-cp grafana-filter.conf ${MONITORING_DATA_DIR}/fail2ban/filter.d/grafana.conf
+cp grafana-jail.conf ${MONITORING_DATA_DIR}/fail2ban/jail.d/
+cp grafana-filter.conf ${MONITORING_DATA_DIR}/fail2ban/filter.d/
 cp iptables-multiport-docker.conf ${MONITORING_DATA_DIR}/fail2ban/action.d/
 ```
 
-### Grafana Config
-TODO!
-After logging into your grafana, you need to add a connection.
-This is prometheus, which you can find at the url http://prometheus:9090
-
-### Status fail2ban
-The status of your fail2ban can be checked via 
-```shell
-docker exec logging_fail2ban fail2ban-client status grafana
+3. Start services:
+```bash
+docker-compose -f docker-compose.monitoring.yml up -d
 ```
+
+### Usage
+
+1. Access Grafana: `http://grafana.mydomain.de`
+   - Default login: admin/passwort from the env file
+   - Add Prometheus data source: `http://prometheus:9090`
+   - Add Loki data source: `http://loki:3100`
+
+3. Security monitoring:
+```bash
+# Check fail2ban status
+docker exec logging_fail2ban fail2ban-client status grafana
+
+# View banned IPs
+docker exec logging_fail2ban fail2ban-client status
+```
+

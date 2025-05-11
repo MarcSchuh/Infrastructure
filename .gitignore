@@ -1,3 +1,46 @@
+# Environment files
 .env
 */.env
-.idea
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-*
+.project
+.classpath
+.settings/
+
+# System files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Logs and temporary files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tmp/
+temp/
+
+# Build and dependencies
+node_modules/
+vendor/
+dist/
+build/
+
+# Local configuration
+*.local
+config.local.js
+
+# Backup files
+*.bak
+*.backup
+*~

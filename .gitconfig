@@ -1,0 +1,21 @@
+[commit]
+    gpgsign = true
+    template = .gitmessage
+
+[gpg]
+    program = gpg
+
+[tag]
+    gpgsign = true
+
+[init]
+    defaultBranch = main
+
+[push]
+    default = current
+    autoSetupRemote = true
+
+[core]
+    editor = vim
+    autocrlf = input
+    safecrlf = warn

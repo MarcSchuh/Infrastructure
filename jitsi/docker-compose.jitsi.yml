@@ -9,7 +9,7 @@ services:
       - "5347:5347"
       - "5280:5280"
     volumes:
-      - ${CONFIG_DIR}/prosody:/config:Z
+      - ${CONFIG_DIR}/prosody:/config
     env_file:
       - .env
     networks:
@@ -23,7 +23,7 @@ services:
     depends_on:
       - prosody
     volumes:
-      - ${CONFIG_DIR}/jicofo:/config:Z
+      - ${CONFIG_DIR}/jicofo:/config
     env_file:
       - .env
     networks:
@@ -39,7 +39,7 @@ services:
     ports:
       - "10000:10000/udp"
     volumes:
-      - ${CONFIG_DIR}/jvb:/config:Z
+      - ${CONFIG_DIR}/jvb:/config
     env_file:
       - .env
     networks:
@@ -61,8 +61,8 @@ services:
       - jicofo
       - jvb
     volumes:
-      - ${CONFIG_DIR}/web:/config:Z
-      - ${CONFIG_DIR}/transcripts:/usr/share/jitsi-meet/transcripts:Z
+      - ${CONFIG_DIR}/web:/config
+      - ${CONFIG_DIR}/transcripts:/usr/share/jitsi-meet/transcripts
     env_file:
       - .env
     networks:
@@ -80,4 +80,5 @@ services:
 networks:
   jitsi_network:
     external: true
+    driver: bridge
 

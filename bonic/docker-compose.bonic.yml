@@ -6,17 +6,26 @@ services:
     restart: ${RESTART_POLICY:-unless-stopped}
     env_file:
       - .env
-    network_mode: host
-    pid: host
+    networks:
+      - boinc_network
     volumes:
-      - /opt/appdata/boinc:/var/lib/boinc
+      - ${BOINC_DATA_DIR:-/opt/appdata/boinc}:/var/lib/boinc:rw
     deploy:
       resources:
         limits:
-          memory: ${WORDPRESS_MEM_LIM:-4G}
-          cpus: ${WORDPRESS_CPU_LIM:-4}
+          memory: ${BOINC_MEM_LIM:-2G}
+          cpus: ${BOINC_CPU_LIM:-4}
+        reservations:
+          memory: ${BOINC_MEM_RES:-512M}
+          cpus: ${BOINC_CPU_RES:-0.5}
     environment:
       - BOINC_GUI_RPC_PASSWORD=${BOINC_GUI_RPC_PASSWORD}
-      - BOINC_PROJECTS=https://www.worldcommunitygrid.org/
+      - BOINC_PROJECTS=${BOINC_PROJECTS:-https://www.worldcommunitygrid.org/}
       - BOINC_PROJECT_KEYS=${BOINC_PROJECT_KEYS}
+      - BOINC_USERNAME=${BOINC_USERNAME:-anonymous}
+      - BOINC_EMAIL=${BOINC_EMAIL:-anonymous@example.com}
+
+networks:
+  boinc_network:
+    driver: bridge
 

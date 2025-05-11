@@ -1,0 +1,46 @@
+extends: default
+
+rules:
+  braces:
+    level: error
+    max-spaces-inside: 1
+  brackets:
+    level: error
+    max-spaces-inside: 1
+  colons:
+    level: error
+    max-spaces-after: 1
+  commas:
+    level: error
+    max-spaces-after: 1
+  comments:
+    level: warning
+    min-spaces-from-content: 1
+  document-end:
+    level: warning
+    present: true
+  document-start:
+    level: warning
+    present: true
+  empty-lines:
+    level: warning
+    max: 2
+  hyphens:
+    level: error
+    max-spaces-after: 1
+  indentation:
+    level: error
+    spaces: 2
+    indent-sequences: true
+  key-duplicates:
+    level: error
+  line-length:
+    level: warning
+    max: 120
+  new-line-at-end-of-file:
+    level: warning
+  new-lines:
+    level: error
+    type: unix
+  trailing-spaces:
+    level: warning
