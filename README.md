@@ -135,6 +135,11 @@ cp ./jitsi.conf ${DATA_DIR}/config/services-config
 chmod -R 755 ${DATA_DIR}
 ```
 
+4. Jitsi requires an external network:
+```bash
+docker network create jitsi_network
+```
+
 ## Setup Order
 
 The services should be started in the following order:
