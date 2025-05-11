@@ -38,3 +38,7 @@ services:
         loki-tenant-id: "jumphost"
     security_opt:
       - no-new-privileges:true
+
+networks:
+  monitoring_network:
+    external: true

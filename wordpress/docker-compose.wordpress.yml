@@ -83,3 +83,5 @@ networks:
     driver: ${NETWORK_DRIVER}
   proxy_network:
     external: true
+  monitoring_network:
+    external: true
