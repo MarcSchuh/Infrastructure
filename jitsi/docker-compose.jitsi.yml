@@ -79,5 +79,6 @@ services:
 
 networks:
   jitsi_network:
+    external: true
     driver: bridge
 
