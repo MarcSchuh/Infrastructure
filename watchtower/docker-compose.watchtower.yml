@@ -21,3 +21,6 @@ services:
         loki-external-labels: "container_name={{.Name}},service=watchtower"
         loki-timeout: "10s"
         loki-tenant-id: "watchtower"
+networks:
+  monitoring_network:
+    external: true
