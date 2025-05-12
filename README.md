@@ -781,7 +781,7 @@ docker-compose -f docker-compose.monitoring.yml up -d
 1. Access Grafana: `http://grafana.mydomain.de`
    - Default login: admin/passwort from the env file
    - Add Prometheus data source: `http://prometheus:9090`
-   - Add Loki data source: `http://loki:3100`
+   - Add Loki data source: `http://monitoring_loki:3100`
 
 3. Security monitoring:
 ```bash
