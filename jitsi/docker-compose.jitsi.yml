@@ -17,7 +17,7 @@ services:
     logging:
       driver: "loki"
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=jitsi-prosody"
@@ -40,7 +40,7 @@ services:
     logging:
       driver: "loki"
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=jitsi-jicofo"
@@ -71,7 +71,7 @@ services:
     logging:
       driver: "loki"
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=jitsi-jvb"
@@ -106,7 +106,7 @@ services:
     logging:
       driver: "loki"
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
         loki-external-labels: "container_name={{.Name}},service=jitsi-web"
