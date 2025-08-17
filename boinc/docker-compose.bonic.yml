@@ -1,0 +1,42 @@
+services:
+
+  boinc:
+    image: boinc/client:${BOINC_VERSION:-latest}
+    container_name: ${BOINC_CONTAINER_NAME:-boinc}
+    restart: ${RESTART_POLICY:-unless-stopped}
+    env_file:
+      - .env
+    networks:
+      - boinc_network
+    volumes:
+      - ${BOINC_DATA_DIR:-/opt/appdata/boinc}:/var/lib/boinc:rw
+    deploy:
+      resources:
+        limits:
+          memory: ${BOINC_MEM_LIM:-2G}
+          cpus: ${BOINC_CPU_LIM:-4}
+        reservations:
+          memory: ${BOINC_MEM_RES:-512M}
+          cpus: ${BOINC_CPU_RES:-0.5}
+    environment:
+      - BOINC_GUI_RPC_PASSWORD=${BOINC_GUI_RPC_PASSWORD}
+      - BOINC_PROJECTS=${BOINC_PROJECTS:-https://www.worldcommunitygrid.org/}
+      - BOINC_PROJECT_KEYS=${BOINC_PROJECT_KEYS}
+      - BOINC_USERNAME=${BOINC_USERNAME:-anonymous}
+      - BOINC_EMAIL=${BOINC_EMAIL:-anonymous@example.com}
+    logging:
+      driver: "loki"
+      options:
+        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
+        loki-retries: "5"
+        loki-batch-size: "400"
+        loki-external-labels: "container_name={{.Name}},service=boinc"
+        loki-timeout: "10s"
+        loki-tenant-id: "boinc"
+
+networks:
+  boinc_network:
+    driver: bridge
+  monitoring_network:
+    external: true
+
