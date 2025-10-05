@@ -10,14 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release of the Infrastructure Repository
 - Docker Compose configurations for multiple services:
+  - Nginx reverse proxy with SSL support
   - Jitsi video conferencing platform
   - WordPress content management system
   - Nextcloud file sharing and collaboration platform
-  - Nginx reverse proxy with SSL support
   - Watchtower for automatic container updates
   - Monitoring stack
   - Jump host configuration
-  - Bonic service
+  - Boinc service to provide compute resources to science
 - Comprehensive documentation in README.md
 - Security features:
   - Fail2ban integration for Nextcloud
