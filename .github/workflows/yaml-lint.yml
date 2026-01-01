@@ -28,4 +28,4 @@ jobs:
           
       - name: Run yamllint
         run: |
-          yamllint . 
+          yamllint .
