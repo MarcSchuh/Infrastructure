@@ -24,21 +24,16 @@ docker-compose.override.yml
 # Logs and temporary files
 *.log
 logs/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 tmp/
 temp/
 
 # Build and dependencies
-node_modules/
 vendor/
 dist/
 build/
 
 # Local configuration
 *.local
-config.local.js
 
 # Backup files
 *.bak
