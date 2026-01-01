@@ -8,6 +8,7 @@ services:
     networks:
       - nextcloud_network
       - proxy_network
+      - monitoring_network
     depends_on:
       - nextcloud_db
       - nextcloud_redis
@@ -36,7 +37,7 @@ services:
         loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=nextcloud_app"
+        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
         loki-timeout: "10s"
         loki-tenant-id: "nextcloud"
 
@@ -49,6 +50,7 @@ services:
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW 
     networks:
       - nextcloud_network
+      - monitoring_network
     volumes:
       - ${NEXTCLOUD_DATA_DIR}/db:/var/lib/mysql
     environment:
@@ -72,7 +74,7 @@ services:
         loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=nextcloud_db"
+        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
         loki-timeout: "10s"
         loki-tenant-id: "nextcloud"
 
@@ -82,6 +84,7 @@ services:
     restart: ${RESTART_POLICY:-unless-stopped}
     networks:
       - nextcloud_network
+      - monitoring_network
     depends_on:
       - nextcloud_app
       - nextcloud_db
@@ -109,7 +112,7 @@ services:
         loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=nextcloud_cron"
+        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
         loki-timeout: "10s"
         loki-tenant-id: "nextcloud"
 
@@ -125,6 +128,7 @@ services:
       - ${NEXTCLOUD_DATA_DIR}/redis:/data
     networks:
       - nextcloud_network
+      - monitoring_network
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
@@ -136,7 +140,7 @@ services:
         loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
         loki-retries: "5"
         loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=nextcloud_redis"
+        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
         loki-timeout: "10s"
         loki-tenant-id: "nextcloud"
 
