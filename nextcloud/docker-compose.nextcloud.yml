@@ -13,7 +13,7 @@ services:
       - nextcloud_db
       - nextcloud_redis
     volumes:
-      - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/html:/var/www/html
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -31,15 +31,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
-        loki-timeout: "10s"
-        loki-tenant-id: "nextcloud"
+    # logging:
+    #   driver: "loki"
+    #   options:
+    #     loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
+    #     loki-retries: "5"
+    #     loki-batch-size: "400"
+    #     loki-external-labels: "job=nextcloud,container=nextcloud_cron"
+    #     loki-timeout: "10s"
+    #     loki-tenant-id: "nextcloud"
 
   nextcloud_db:
     image: mariadb:${MARIADB_VERSION}
@@ -52,7 +52,7 @@ services:
       - nextcloud_network
       - monitoring_network
     volumes:
-      - ${NEXTCLOUD_DATA_DIR}/db:/var/lib/mysql
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/db:/var/lib/mysql
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -68,15 +68,15 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
-        loki-timeout: "10s"
-        loki-tenant-id: "nextcloud"
+    # logging:
+    #   driver: "loki"
+    #   options:
+    #     loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
+    #     loki-retries: "5"
+    #     loki-batch-size: "400"
+    #     loki-external-labels: "job=nextcloud,container=nextcloud_cron"
+    #     loki-timeout: "10s"
+    #     loki-tenant-id: "nextcloud"
 
   nextcloud_cron:
     image: nextcloud:${NEXTCLOUD_VERSION:-latest}
@@ -98,7 +98,7 @@ services:
       - REDIS_HOST=${NEXTCLOUD_REDIS_CONTAINER_NAME:-nextcloud_redis}
       - REDIS_HOST_PASSWORD=${REDIS_PASSWORD}
     volumes:
-      - ${NEXTCLOUD_DATA_DIR}/html:/var/www/html
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/html:/var/www/html
     entrypoint: /cron.sh
     healthcheck:
       test: ["CMD-SHELL", "ps aux | grep -v grep | grep -q 'cron'"]
@@ -106,15 +106,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
-        loki-timeout: "10s"
-        loki-tenant-id: "nextcloud"
+    # logging:
+    #   driver: "loki"
+    #   options:
+    #     loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
+    #     loki-retries: "5"
+    #     loki-batch-size: "400"
+    #     loki-external-labels: "job=nextcloud,container=nextcloud_cron"
+    #     loki-timeout: "10s"
+    #     loki-tenant-id: "nextcloud"
 
 
   nextcloud_redis:
@@ -125,7 +125,7 @@ services:
       - .env
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
-      - ${NEXTCLOUD_DATA_DIR}/redis:/data
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/redis:/data
     networks:
       - nextcloud_network
       - monitoring_network
@@ -134,25 +134,25 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "job=nextcloud,container=nextcloud_cron"
-        loki-timeout: "10s"
-        loki-tenant-id: "nextcloud"
+    # logging:
+    #   driver: "loki"
+    #   options:
+    #     loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
+    #     loki-retries: "5"
+    #     loki-batch-size: "400"
+    #     loki-external-labels: "job=nextcloud,container=nextcloud_cron"
+    #     loki-timeout: "10s"
+    #     loki-tenant-id: "nextcloud"
 
   nextcloud_fail2ban:
     image: crazymax/fail2ban:${FAIL2BAN_VERSION:-latest}
     container_name: ${NEXTCLOUD_FAIL2BAN_CONTAINER_NAME:-nextcloud_fail2ban}
     restart: ${RESTART_POLICY:-unless-stopped}
     volumes:
-      - ${NEXTCLOUD_DATA_DIR}${NEXTCLOUD_LOG_PATH:-/html/data/nextcloud.log}:/var/log/nextcloud/nextcloud.log:ro  # Mount data dir as read-only
-      - ${NEXTCLOUD_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d:ro  # Your fail2ban configuration
-      - ${NEXTCLOUD_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d:ro  # Custom filters
-      - ${NEXTCLOUD_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d:ro
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}${NEXTCLOUD_LOG_PATH:-/html/data/nextcloud.log}:/var/log/nextcloud/nextcloud.log:ro  # Mount data dir as read-only
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/fail2ban/jail.d:/etc/fail2ban/jail.d:ro  # Your fail2ban configuration
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/fail2ban/filter.d:/etc/fail2ban/filter.d:ro  # Custom filters
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/fail2ban/action.d:/etc/fail2ban/action.d:ro
     network_mode: "host"
     cap_add:
       - NET_ADMIN
@@ -163,20 +163,21 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    logging:
-      driver: "loki"
-      options:
-        loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
-        loki-retries: "5"
-        loki-batch-size: "400"
-        loki-external-labels: "container_name={{.Name}},service=nextcloud_fail2ban"
-        loki-timeout: "10s"
-        loki-tenant-id: "nextcloud"
+    # logging:
+    #   driver: "loki"
+    #   options:
+    #     loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
+    #     loki-retries: "5"
+    #     loki-batch-size: "400"
+    #     loki-external-labels: "container_name={{.Name}},service=nextcloud_fail2ban"
+    #     loki-timeout: "10s"
+    #     loki-tenant-id: "nextcloud"
 
 networks:
   nextcloud_network:
     name: nextcloud_network
     driver: bridge
+    external: true
   proxy_network:
     external: true
   monitoring_network:
