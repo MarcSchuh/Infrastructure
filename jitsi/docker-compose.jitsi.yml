@@ -37,17 +37,6 @@ services:
       - .env
     networks:
       - jitsi_network
-<<<<<<< HEAD
-        #logging:
-        #driver: "loki"
-        #options:
-        #loki-url: "http://monitoring_loki:3100/loki/api/v1/push"
-        #loki-retries: "5"
-        #loki-batch-size: "400"
-        #loki-external-labels: "container_name={{.Name}},service=jitsi-jicofo"
-        #loki-timeout: "10s"
-        #loki-tenant-id: "jitsi"
-=======
     # logging:
     #   driver: "loki"
     #   options:
@@ -57,7 +46,6 @@ services:
     #     loki-external-labels: "container_name={{.Name}},service=jitsi-jicofo"
     #     loki-timeout: "10s"
     #     loki-tenant-id: "jitsi"
->>>>>>> cb138d2 (Switch to "docker compose", more detailed readme, initially comment out https and loki configuration)
 
   # JVB (Video Bridge)
   jvb:
