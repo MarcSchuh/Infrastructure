@@ -613,6 +613,10 @@ When moving a Nextcloud instance, the following files/directories contain the im
     - `apps/`
     - `themes/`
 
+## Improving Performance
+For large systems with many files (more than 100k), it can be reasonable to improve the nextcloud performance. 
+Place the `nextcloud-tuning.cnf` at `${LOCAL_NEXTCLOUD_DATA_DIR}/db-conf` and the `nextcloud.cfg` at your clients (!) config at `.config/Nextcloud/nextcloud.cfg`.
+
 
 # Watchtower Setup
 
