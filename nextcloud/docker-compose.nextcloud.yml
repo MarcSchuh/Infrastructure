@@ -53,6 +53,7 @@ services:
       - monitoring_network
     volumes:
       - ${LOCAL_NEXTCLOUD_DATA_DIR}/db:/var/lib/mysql
+      - ${LOCAL_NEXTCLOUD_DATA_DIR}/db-conf:/etc/mysql/conf.d:ro
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
